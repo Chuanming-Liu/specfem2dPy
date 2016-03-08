@@ -268,7 +268,7 @@ class symtrace(obspy.core.trace.Trace):
         Initialize ftan parameters
         """
         self.ftanparam=ftanParam()
-
+        return
     def init_snrParam(self):
         """
         Initialize SNR parameters
