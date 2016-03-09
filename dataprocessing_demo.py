@@ -7,9 +7,9 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 SLst=specfem2dPy.StaLst();
 SLst.ReadStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/STATIONS');
-SDB=symData2d.Specfem2dDataBase(240000., 240000., SLst);
+SDB=symData2d.Specfem2dDataBase(100000., 240000., SLst);
 
-# 
+
 # datadir='/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/OUTPUT_FILES'
 # SDB.ReadtxtSeismograms(datadir=datadir);
 # outdir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo'
@@ -33,12 +33,13 @@ ds=10
 myfield=field2d.Field2d(Nx=480/dx, Ny=480/dx, dx=dx, dy=dy);
 myfield.LoadFile('/lustre/janus_scratch/life9360/specfem2d_data/field_homo/TravelT.ph.10.0.txt')
 myfield.natgridInterp();
-# myfield.PlotField()
-# myfield.Gradient();
-# myfield.GetApparentV();
-# myfield.PlotAppV()
+myfield.PlotField()
+myfield.Gradient();
+myfield.GetApparentV();
+myfield.PlotAppV()
 myfield.GetDoT();
 myfield.PlotDoT();
+plt.show()
 # myfield.LaplacianEqualXY()
 # myfield.GetLplcCorrection(per=4.0)
 # # myfield.Laplacian()

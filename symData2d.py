@@ -268,7 +268,7 @@ class symtrace(obspy.core.trace.Trace):
         Initialize ftan parameters
         """
         self.ftanparam=ftanParam()
-        return;
+        return
     def init_snrParam(self):
         """
         Initialize SNR parameters
@@ -845,34 +845,23 @@ class InputFtanParam(object): ###
 
 class Specfem2dDataBase(object):
     def __init__(self, enx, enz, StaLst, dspacing=1000):
-    # def __init__(self, enx, enz, xmax, zmax, ds=1000., xmin=0, zmin=0, dx=1, dz=1):
+        print ' Attention: Input source location unit should be in meter! ';
         self.symStream=obspy.core.Stream();
-        # self.Nx = int((xmax-xmin)/dx);
-        # self.Nz = int((zmax-zmin)/dz);
-        # xmax=xmin+dx*self.Nx;
-        # zmax=zmin+dz*self.Nz;
-        # self.dx=dx;
-        # self.dz=dz;
         self.dspacing=dspacing;
-        # self.xmax=xmax;
-        # self.xmin=xmin;
-        # self.zmax=zmax;
-        # self.zmin=zmin;
         self.StaLst=StaLst;
         self.enx=enx;
         self.enz=enz;
         return
     
     def ReadtxtSeismograms(self, datadir, sfx='.BXY.semd'):
+        print 'Start Reading Seismograms (txt) !'
         for sta in self.StaLst:
             infname = datadir+'/' + sta.network+'.' +sta.stacode+sfx;
             InArr=np.loadtxt(infname);
             time=InArr[:,0];
             data=InArr[:,1];
             tr=obspy.core.Trace();
-            # Data
             tr.data=data;
-            # Header
             tr.stats['sac']={};
             tr.stats.sac.stlo=sta.x/1000.;
             tr.stats.sac.stla=sta.z/1000.;
@@ -886,6 +875,7 @@ class Specfem2dDataBase(object):
             tr.stats.sac.dist=np.sqrt( (tr.stats.sac.stlo-tr.stats.sac.evlo)**2
                 + (tr.stats.sac.stla-tr.stats.sac.evla)**2 );
             self.symStream.append(tr);
+        print 'End of Reading Seismograms (txt) !'
         return;
     
     def SaveSeismograms(self, outdir):
@@ -910,7 +900,7 @@ class Specfem2dDataBase(object):
             os.makedirs(outdir)
         print 'Start aftan analysis!'
         for mytrace in self.symStream:
-            if mytrace.stats.sac.dist < 0.1:
+            if mytrace.stats.sac.dist < 0.01:
                 print 'Too close to source, skip aftan for: '+mytrace.id+'SAC';
                 continue;
             Strace=symtrace(mytrace.data, mytrace.stats);
@@ -938,7 +928,7 @@ class Specfem2dDataBase(object):
         return
     
     
-    def GetField2dFile(self, datadir, outdir, perLst, datatype='both', outfmt='txt'):
+    def GetField2dFile(self, datadir, outdir, perLst, factor=0.0, datatype='both', outfmt='txt'):
         if not os.path.isdir(outdir):
             os.makedirs(outdir);
         for per in perLst:
@@ -957,7 +947,7 @@ class Specfem2dDataBase(object):
                 (pvel, gvel) = fDISP.get_phvel(per);
                 (snr, signal1, noise1) = fsnr.get_snr(per);
                 dist=np.sqrt( (self.enx-X)**2 +  (self.enz-Z)**2 )/self.dspacing;
-                if dist < per * 0.0:
+                if dist < per * factor:
                     print 'Skipping: '+sacfname;
                     continue;
                 TravelTph=dist/pvel;
@@ -969,7 +959,7 @@ class Specfem2dDataBase(object):
                 TgrLst=np.append(TgrLst, TravelTgr);
                 AmpLst=np.append(AmpLst, signal1);
                 Length=Length+1;
-                    
+            ### End of Reading aftan results
             Tphfname = outdir+'/TravelT.ph.'+str(per)+'.'+outfmt;
             Tgrfname = outdir+'/TravelT.gr.'+str(per)+'.'+outfmt;
             Ampfname = outdir+'/Amplitude.'+str(per)+'.'+outfmt;

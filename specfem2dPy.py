@@ -369,8 +369,8 @@ class InputChecker(object):
     
     
 class WaveSnapshot(object):
-    def __init__(self, datadir, nf, ni=5, dn=10, pfx='wavefield', sfx='_01_000.txt',
-        gridfname='wavefield_grid_for_dumps_000.txt'):
+    def __init__(self, datadir, xmax, Nx, zmax, Nz, nf, xmin=0, zmin=0, ni=5, dn=10,
+        pfx='wavefield', sfx='_01_000.txt', gridfname='wavefield_grid_for_dumps_000.txt', lpd=4):
 
         self.datadir=datadir;
         self.pfx=pfx;
@@ -380,47 +380,63 @@ class WaveSnapshot(object):
         self.Narr=np.arange(Ns)*dn+dn;
         self.Narr=np.append(ni, self.Narr);
         self.gridfname=gridfname;
+        self.dx=(xmax-xmin)/Nx/2;
+        self.dz=(zmax-zmin)/Nz/2;
+        self.Nx=2*Nx;
+        self.Nz=2*Nz;
+        self.lpd=lpd;
+        XArr = np.arange(2*Nx+1)*self.dx+xmin;
+        ZArr = np.arange(2*Nz+1)*self.dz+zmin;
+        self.XArr, self.ZArr = np.meshgrid(XArr, ZArr); 
         return;
     
     def ReadGridFile(self):
         infname=self.datadir+'/'+self.gridfname;
         InArr=np.loadtxt(infname);
-        self.xArr=InArr[:,0];
-        self.zArr=InArr[:,1];
-        self.xmin=self.xArr.min();
-        self.xmax=self.xArr.max();
-        self.zmin=self.zArr.min();
-        self.zmax=self.zArr.max();
+        self.xArrIn=InArr[:,0];
+        self.zArrIn=InArr[:,1];
+        self.xmin=self.xArrIn.min();
+        self.xmax=self.xArrIn.max();
+        self.zmin=self.zArrIn.min();
+        self.zmax=self.zArrIn.max();
         return;
     
+    def GetElement(self):
+        XArr=self.XArr.reshape( (self.Nx+1)*(self.Nz+1) );
+        ZArr=self.ZArr.reshape( (self.Nx+1)*(self.Nz+1) );
+        self.index=np.array([],dtype=int)
+        for i in np.arange( (self.Nx+1)*(self.Nz+1) ):
+            x=XArr[i];
+            z=ZArr[i];
+            Logic = (self.xArrIn==x)*(self.zArrIn==z);
+            index=int(np.where(Logic==True)[0][0])
+            self.index=np.append(self.index, index)
+        return;
+
     def ReadSnapshots(self):
         wfmax=-999;
         wfmin=999;
         for N in self.Narr:
             infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N);
+            print 'Reading ',infname,' snapshot!' 
             InArr=np.loadtxt(infname);
             wfmax=max(wfmax, InArr.max() );
             wfmin=min(wfmin, InArr.min() );
             self.wfmax=max(wfmax, abs(wfmin));
-            self.snapshots.append(InArr);
+            snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
+            self.snapshots.append( snap[::-1, :] );
         return;
     
-    def PlotSnapshots(self, factor=2., outfname=None):
-        fig = plt.figure()
+    def PlotSnapshots(self, ds=1000., factor=5., outfname=None):
+        fig = plt.figure(figsize=(16,12))
         ims = [];
-        xi = np.linspace(self.xmin, self.xmax, 100)
-        zi = np.linspace(self.zmin, self.zmax, 100)
-        self.xi, self.zi = np.meshgrid(xi, zi)
-        #-- Interpolating at the points in xi, yi
         i=0;
         for snap in self.snapshots:
             i=i+1
             print 'Plotting ',i,' snapshot!' 
-            vi = griddata(self.xArr, self.zArr, snap[::-1], self.xi, self.zi, 'linear')
-            im=plt.imshow(vi, cmap='seismic_r', vmin = -self.wfmax/factor, vmax = self.wfmax/factor);
-            # im=plt.pcolor(self.xArr, self.zArr, snap)
+            im=plt.imshow(snap, cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
+                    vmin = -self.wfmax/factor, vmax = self.wfmax/factor);
             ims.append([im])
-        
         im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000, blit=True)
         plt.xlabel('x (km)')
         plt.ylabel('z (km)')
@@ -429,93 +445,98 @@ class WaveSnapshot(object):
         plt.show()
         return im_ani
     
-    def SaveDSSnap(self, Nx=100, Nz=100, dpfx='lf'):
-        xi = np.linspace(self.xmin, self.xmax, Nx)
-        zi = np.linspace(self.zmin, self.zmax, Nz)
-        self.xi, self.zi = np.meshgrid(xi, zi)
-        #-- Interpolating at the points in xi, yi
-        xfname=self.datadir+'/'+dpfx+'_x_'+self.gridfname;
-        zfname=self.datadir+'/'+dpfx+'_z_'+self.gridfname;
-        np.save(xfname,xi);
-        np.save(zfname,zi);
-        for i in np.arange(self.Narr.size):
-            print 'Downsampling ',i+1,' snapshot!' 
-            vi = griddata(self.xArr, self.zArr, self.snapshots[i], self.xi, self.zi, 'linear')
-            vfname=(self.datadir+'/'+dpfx+self.pfx+'%07d'+self.sfx) % (self.Narr[i]);
-            np.save(vfname,ma.getdata(vi));
+    def ReadSingleSnap(self, N):
+        wfmax=-999;
+        wfmin=999;
+        infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N);
+        print 'Reading ',infname,' snapshot!' 
+        InArr=np.loadtxt(infname);
+        wfmax=max(wfmax, InArr.max() );
+        wfmin=min(wfmin, InArr.min() );
+        self.wfmax=max(wfmax, abs(wfmin));
+        snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
+        self.singleSnap=snap
         return;
     
-    # def SaveDSSnapParallel(self, Nx=100, Nz=100, dpfx='lf'):
+    def PlotSingleSnap(self, ds=1000., factor=1., outfname=None):
+        fig = plt.figure(figsize=(16,12))
+        ims = [];
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
+        plt.xlabel('x (km)')
+        plt.ylabel('z (km)')
+        plt.axis('scaled')
+        plt.xlim(self.xmin/ds, self.xmax/ds)
+        plt.ylim( self.zmin/ds, self.zmax/ds )
+        # if outfname!=None:
+        #     im_ani.save(outfname, )
+        plt.show()
+        return 
+    
+    # 
+    # def SaveDSSnap(self, dpfx='lf'):
     #     xi = np.linspace(self.xmin, self.xmax, Nx)
     #     zi = np.linspace(self.zmin, self.zmax, Nz)
     #     self.xi, self.zi = np.meshgrid(xi, zi)
-    #     # -- Interpolating at the points in xi, yi
+    #     #-- Interpolating at the points in xi, yi
     #     xfname=self.datadir+'/'+dpfx+'_x_'+self.gridfname;
     #     zfname=self.datadir+'/'+dpfx+'_z_'+self.gridfname;
     #     np.save(xfname,xi);
     #     np.save(zfname,zi);
-    #     saveDSsnap = partial(SaveDSsnapshots, xi=self.xi, zi=self.zi, suffix=suffix)
-    #     pool =mp.Pool()
-    #     pool.map(saveDSsnap, self.snapshots) #make our results with a map call
-    #     pool.close() #we are not adding any more processes
-    #     pool.join() #tell it to wait until all threads are done before going on
-    #     print 'End of Adding Horizontal Slowness  ( Parallel ) !'
-    #     
-    # 
     #     for i in np.arange(self.Narr.size):
-    #         print 'Downsampling ',i,' snapshot!' 
-    #         vi = griddata(self.xArr, self.zArr, self.snapshots[i], self.xi, self.zi, 'nn')
+    #         print 'Downsampling ',i+1,' snapshot!' 
+    #         vi = griddata(self.xArrIn, self.zArrIn, self.snapshots[i], self.xi, self.zi, 'linear')
     #         vfname=(self.datadir+'/'+dpfx+self.pfx+'%07d'+self.sfx) % (self.Narr[i]);
     #         np.save(vfname,ma.getdata(vi));
     #     return;
-    
-    def LoadDSSnap(self, dpfx='lf'):
-        wfmax=-999;
-        wfmin=999;
-        #-- Interpolating at the points in xi, yi
-        i=0;
-        xfname=self.datadir+'/'+dpfx+'_x_'+self.gridfname+'.npy';
-        zfname=self.datadir+'/'+dpfx+'_z_'+self.gridfname+'.npy';
-        self.xi=np.load(xfname);
-        self.zi=np.load(zfname);
-        self.xmin=self.xi.min();
-        self.xmax=self.xi.max();
-        self.zmin=self.zi.min();
-        self.zmax=self.zi.max();
-        self.dssnaps=[]
-        for N in self.Narr:
-            i=i+1
-            print 'Loading Downsampled ',i,' snapshot!' 
-            vfname=(self.datadir+'/'+dpfx+self.pfx+'%07d'+self.sfx+'.npy') % (N);
-            snap=np.load(vfname);
-            wfmax=max(wfmax, snap.max() );
-            wfmin=min(wfmin, snap.min() );
-            self.wfmax=max(wfmax, abs(wfmin));
-            self.dssnaps.append(snap);
-        return;
-    
-    def PlotDSSnaps(self, ds=1000., factor=4., outfname=None):
-        fig = plt.figure(dpi=200)
-        ims = [];
-        #-- Interpolating at the points in xi, yi
-        i=0;
-        for snap in self.dssnaps:
-            i=i+1
-            print 'Plotting ',i,' snapshot!' 
-            im=plt.imshow(snap[::-1], cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
-                    vmin = -self.wfmax/factor, vmax = self.wfmax/factor);
-            # im=plt.pcolor(self.xArr, self.zArr, snap)
-            ims.append([im])
-        
-        im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat=False, blit=True)
-        plt.xlabel('x (km)')
-        plt.ylabel('z (km)')
-        plt.show()
-        if outfname!=None:
-            try:
-                im_ani.save(outfname, dpi=200)
-            except:
-                return im_ani
-        return im_ani
+    # 
+    # 
+    # def LoadDSSnap(self, dpfx='lf'):
+    #     wfmax=-999;
+    #     wfmin=999;
+    #     #-- Interpolating at the points in xi, yi
+    #     i=0;
+    #     xfname=self.datadir+'/'+dpfx+'_x_'+self.gridfname+'.npy';
+    #     zfname=self.datadir+'/'+dpfx+'_z_'+self.gridfname+'.npy';
+    #     self.xi=np.load(xfname);
+    #     self.zi=np.load(zfname);
+    #     self.xmin=self.xi.min();
+    #     self.xmax=self.xi.max();
+    #     self.zmin=self.zi.min();
+    #     self.zmax=self.zi.max();
+    #     self.dssnaps=[]
+    #     for N in self.Narr:
+    #         i=i+1
+    #         print 'Loading Downsampled ',i,' snapshot!' 
+    #         vfname=(self.datadir+'/'+dpfx+self.pfx+'%07d'+self.sfx+'.npy') % (N);
+    #         snap=np.load(vfname);
+    #         wfmax=max(wfmax, snap.max() );
+    #         wfmin=min(wfmin, snap.min() );
+    #         self.wfmax=max(wfmax, abs(wfmin));
+    #         self.dssnaps.append(snap);
+    #     return;
+    # 
+    # def PlotDSSnaps(self, ds=1000., factor=4., outfname=None):
+    #     fig = plt.figure(dpi=200)
+    #     ims = [];
+    #     #-- Interpolating at the points in xi, yi
+    #     i=0;
+    #     for snap in self.dssnaps:
+    #         i=i+1
+    #         print 'Plotting ',i,' snapshot!' 
+    #         im=plt.imshow(snap[::-1], cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
+    #                 vmin = -self.wfmax/factor, vmax = self.wfmax/factor);
+    #         # im=plt.pcolor(self.xArr, self.zArr, snap)
+    #         ims.append([im])
+    #     
+    #     im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat=False, blit=True)
+    #     plt.xlabel('x (km)')
+    #     plt.ylabel('z (km)')
+    #     plt.show()
+    #     if outfname!=None:
+    #         try:
+    #             im_ani.save(outfname, dpi=200)
+    #         except:
+    #             return im_ani
+    #     return im_ani
 
 

@@ -139,7 +139,7 @@ class Field2d(object):
         return;
     
     def GetDoT(self):
-        Darr=np.sqrt( (self.Xarr-240)**2 + (self.Yarr-240)**2);
+        Darr=np.sqrt( (self.Xarr-100)**2 + (self.Yarr-240)**2);
         self.DoT = Darr/ma.getdata(self.Zarr);
         return;
     
