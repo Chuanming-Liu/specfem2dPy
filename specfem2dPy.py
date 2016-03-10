@@ -163,11 +163,11 @@ class VelocityModel(object):
         repeatknots=np.tile(self.knots, (lpd+1));
         self.XArr=(A*self.XelementArr).T + (0.5+0.5*repeatknots*A.T)*self.dx - self.dx;
         self.XArr=self.XArr.reshape( (lpd+1)*(lpd+1)*Nx );
-        self.XArr=np.tile(self.XArr, Nx)
+        self.XArr=np.tile(self.XArr, Nz)
     
-        A=np.ones([lpd+1,Nx])
+        A=np.ones([lpd+1,Nz])
         B=(A*self.ZelementArr).T
-        C=(0.5+0.5*A.T*self.knots)*self.dx - self.dx;
+        C=(0.5+0.5*A.T*self.knots)*self.dz - self.dz;
         D=B+C
         E=np.tile(D, Nx)
         self.ZArr=np.repeat(E,lpd+1)

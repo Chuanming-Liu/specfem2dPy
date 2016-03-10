@@ -12,8 +12,8 @@ InCheck.Check();
 # SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/STATIONS');
 
 
-# Vm=specfem2dPy.VelocityModel(xmin=0, xmax=1000000, Nx=100, zmin=0, zmax=1000000, Nz=100);
-Vm=specfem2dPy.VelocityModel(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz=80);
+Vm=specfem2dPy.VelocityModel(xmin=0, xmax=960000, Nx=160, zmin=0, zmax=480000, Nz=80);
+# Vm=specfem2dPy.VelocityModel(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz=80);
 # Vm.CircleGradualAnomaly(Xc=120000, Zc=120000, R=60000, Va=3000);
 # Vm.plotModel()
 # # Vm.ReadModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat')
@@ -21,22 +21,22 @@ Vm=specfem2dPy.VelocityModel(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz
 # # Vm.CircleHomoAnomaly(Xc=100000, Zc=100000, R=50000, Va=2000.)
 # # Vm.BlockHomoAnomaly(Xmin=0, Xmax=100000, Zmin=0, Zmax=180000, Va=3000);
 # # Vm.plot()
-# # Vm.WriteModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat_lf')
+# Vm.WriteModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat_lf')
 # # IC=specfem2dPy.InputChecker(dt=0.01, dx=5., dz=5., fc=0.1, lpd=4, vmin=3.0, vmax=3.5)
 # 
-# itest=np.loadtxt('proc000000_rho_vp_vs.dat');
-# AAA=itest[:,0];
-# BBB=itest[:,1];
+itest=np.loadtxt('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat');
+AAA=itest[:,0];
+BBB=itest[:,1];
 
 # 
 # 
 ### Wavefield Snapshots
-WS=specfem2dPy.WaveSnapshot(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz=80, datadir=
-    '/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/OUTPUT_FILES', nf=4800);
-WS.ReadGridFile()
-WS.GetElement()
-WS.ReadSnapshots();
-im_ani=WS.PlotSnapshots()
+# WS=specfem2dPy.WaveSnapshot(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz=80, datadir=
+#     '/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/OUTPUT_FILES', nf=4800);
+# WS.ReadGridFile()
+# WS.GetElement()
+# WS.ReadSnapshots();
+# im_ani=WS.PlotSnapshots()
 # WS.ReadSingleSnap(1000)
 # WS.PlotSingleSnap()
 # # WS.SaveDSSnap()
