@@ -158,23 +158,24 @@ class VelocityModel(object):
         self.XelementArr=self.xmin+np.arange(Nx)*self.dx+self.dx;
         self.ZelementArr=self.zmin+np.arange(Nz)*self.dz+self.dz;
         self.get_GLL();
-        
+        # Generate X grid points given element number and Lagrange polynomial degree
         A=np.ones([(lpd+1)*(lpd+1),Nx]);
         repeatknots=np.tile(self.knots, (lpd+1));
         self.XArr=(A*self.XelementArr).T + (0.5+0.5*repeatknots*A.T)*self.dx - self.dx;
         self.XArr=self.XArr.reshape( (lpd+1)*(lpd+1)*Nx );
         self.XArr=np.tile(self.XArr, Nz)
-    
+        # Generate X grid points given element number and Lagrange polynomial degree
         A=np.ones([lpd+1,Nz])
         B=(A*self.ZelementArr).T
         C=(0.5+0.5*A.T*self.knots)*self.dz - self.dz;
         D=B+C
         E=np.tile(D, Nx)
         self.ZArr=np.repeat(E,lpd+1)
+        # Generate background velocity and density parameters
         self.VpArr=np.ones( [( (lpd+1) * Nz )*( (lpd+1) * Nx )] )*Vp;
         self.VsArr=np.ones( [( (lpd+1) * Nz )*( (lpd+1) * Nx )] )*Vs;
         self.RhoArr=np.ones( [( (lpd+1) * Nz )*( (lpd+1) * Nx )] )*Rho;
-
+        
         self.plotflag=plotflag;
         if plotflag==True:
         	A=np.ones([lpd+1, Nx]);
@@ -277,23 +278,27 @@ class VelocityModel(object):
         self.knots=knots;
         return
     
-    def plot(self, ds=1000, unit='km', vmin=3.0, vmax=4.0):
+    def plot(self, ds=1000, unit='km', vmin=2.5, vmax=4.5):
         if self.plotflag==False:
             raise ValueError('No plot array!');
-        plt.figure();
+        plt.figure(figsize=(16,12));
         if self.regular==True:
-            plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap='seismic_r', vmin=3.0, vmax=4.0);
+            plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap='seismic_r', vmin=vmin, vmax=vmax);
         else:
             xi = np.linspace(self.xmin, self.xmax, self.Nx*10)
             zi = np.linspace(self.zmin, self.zmax, self.Nz*10)
             self.xi, self.zi = np.meshgrid(xi, zi)
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
-            plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap='seismic_r', vmin=3.0, vmax=4.0);
-        plt.xlabel(unit);
-        plt.ylabel(unit);
+            plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap='seismic_r', vmin=vmin, vmax=vmax);
+        plt.plot( 320, 320 , 'y*', markersize=30)
+        plt.xlabel('x('+unit+')', fontsize=30);
+        plt.ylabel('z('+unit+')', fontsize=30);
         plt.colorbar();
         plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds]);
+        # plt.axis('scaled');
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
         plt.show()
         return;
     
@@ -301,7 +306,6 @@ class VelocityModel(object):
         vmin=self.VsArr.min();
         vmax=self.VsArr.max();
         return vmin, vmax
-    
     
 class InputChecker(object):
     
@@ -367,7 +371,6 @@ class InputChecker(object):
         print '---------- Stability conditions checked  ----------'
         return;
     
-    
 class WaveSnapshot(object):
     def __init__(self, datadir, xmax, Nx, zmax, Nz, nf, xmin=0, zmin=0, ni=5, dn=10,
         pfx='wavefield', sfx='_01_000.txt', gridfname='wavefield_grid_for_dumps_000.txt', lpd=4):
@@ -391,6 +394,7 @@ class WaveSnapshot(object):
         return;
     
     def ReadGridFile(self):
+        print 'Reading Grid File!';
         infname=self.datadir+'/'+self.gridfname;
         InArr=np.loadtxt(infname);
         self.xArrIn=InArr[:,0];
@@ -399,9 +403,11 @@ class WaveSnapshot(object):
         self.xmax=self.xArrIn.max();
         self.zmin=self.zArrIn.min();
         self.zmax=self.zArrIn.max();
+        print 'End Reading Grid File!';
         return;
     
-    def GetElement(self):
+    def GetElementIndex(self):
+        print 'Getting element indices !';
         XArr=self.XArr.reshape( (self.Nx+1)*(self.Nz+1) );
         ZArr=self.ZArr.reshape( (self.Nx+1)*(self.Nz+1) );
         self.index=np.array([],dtype=int)
@@ -411,7 +417,19 @@ class WaveSnapshot(object):
             Logic = (self.xArrIn==x)*(self.zArrIn==z);
             index=int(np.where(Logic==True)[0][0])
             self.index=np.append(self.index, index)
+        print 'End getting element indices !';
         return;
+    
+    def SaveElementIndex(self, outdir):
+        outfname=outdir+'/index.npy';
+        np.save(outfname, self.index);
+        return;
+    
+    def LoadElementIndex(self, datadir):
+        infname=datadir+'/index.npy';
+        self.index=np.load(infname);
+        return;
+    
 
     def ReadSnapshots(self):
         wfmax=-999;
@@ -458,18 +476,18 @@ class WaveSnapshot(object):
         self.singleSnap=snap
         return;
     
-    def PlotSingleSnap(self, ds=1000., factor=1., outfname=None):
+    def PlotSingleSnap(self, unit='km', ds=1000., factor=1., outfname=None):
         fig = plt.figure(figsize=(16,12))
-        ims = [];
         im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
-        plt.xlabel('x (km)')
-        plt.ylabel('z (km)')
-        plt.axis('scaled')
-        plt.xlim(self.xmin/ds, self.xmax/ds)
-        plt.ylim( self.zmin/ds, self.zmax/ds )
-        # if outfname!=None:
-        #     im_ani.save(outfname, )
+        plt.plot( 320, 320 , 'y*', markersize=30)
+        plt.xlabel('x('+unit+')', fontsize=30);
+        plt.ylabel('z('+unit+')', fontsize=30);
+        plt.colorbar();
+        plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds]);
+        # plt.axis('scaled');
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
         plt.show()
-        return 
+        return im
     
 
