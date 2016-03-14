@@ -138,8 +138,8 @@ class Field2d(object):
         # plt.show();
         return;
     
-    def GetDoT(self):
-        Darr=np.sqrt( (self.Xarr-100)**2 + (self.Yarr-240)**2);
+    def GetDoT(self, enx, eny):
+        Darr=np.sqrt( (self.Xarr-enx)**2 + (self.Yarr-eny)**2);
         self.DoT = Darr/ma.getdata(self.Zarr);
         return;
     
@@ -223,26 +223,6 @@ class Field2d(object):
         plt.ylabel('km');
         # plt.show();
         return;
-    
-    
-    
-    
-    
-    # def Laplacian(self, ):
-        
-    
-    
-    #         cb=m.colorbar(location='bottom',size='2%')
-    # cb.ax.tick_params(labelsize=15)
-    # cb.set_label('Phase travel time (sec)', fontsize=20)
-    
-        
-        
-            
-        
-        
-    
-        
     
     
 
