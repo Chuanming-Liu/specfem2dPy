@@ -5,8 +5,8 @@ import scipy.interpolate as sinter
 from matplotlib.mlab import griddata
 import numpy.ma as ma
 import scipy.ndimage.filters 
-
-
+from math import pi
+from skimage.filters import roberts, sobel, scharr, prewitt
 class Field2d(object):
     def __init__(self, Nx, Ny, dx, dy):
         self.Nx=int(Nx)+1;
@@ -71,6 +71,7 @@ class Field2d(object):
                 return;
         # self.Zarr = ma.getdata(griddata(self.XarrIn, self.YarrIn, self.ZarrIn, self.Xarr, self.Yarr, interp=interp));
         self.Zarr = griddata(self.XarrIn, self.YarrIn, self.ZarrIn, self.Xarr, self.Yarr, interp=interp);
+        self.Zarr = ma.getdata(self.Zarr)
         # self.Zarr=self.Zarr.reshape(self.Nx*self.Ny);
         return;
     
@@ -99,8 +100,51 @@ class Field2d(object):
         plt.ylabel('km');
         plt.show();
         return;
+    
+    def fftDiff(self, m, n):
+        # h = np.fft.fft2(ma.getdata(self.Zarr));
+        h = np.fft.fft2(self.Zarr);
+        # Zarr=np.zeros([256,256]);
+        # Zarr[:161,:161]=(self.Zarr)
+        # h = np.fft.fft2(Zarr);
+        hshift = np.fft.fftshift(h);
+        Nx=self.Nx;
+        Ny=self.Ny;
+        # Nx, Ny=Zarr.shape
+        if Nx % 2 ==0:
+            u=np.arange(Nx) - Nx/2.;
+        else:
+            u=np.arange(Nx) - (Nx-1)/2.;
+            
+        if Ny % 2 ==0:
+            v=np.arange(Ny) - Ny/2.;
+        else:
+            v=np.arange(Ny) - (Ny-1)/2.;
         
-    def Gradient(self, edge_order=1):
+        U,V=np.meshgrid(u,v);
+        hdiff =  ((1j*2*np.pi*U/Nx)**m)*((1j*2*np.pi*V/Ny)**n) * hshift;
+        out_diff = np.real( np.fft.ifft2( np.fft.ifftshift(hdiff) ) )/(self.dx**m)/(self.dy**n);
+        out_diff = out_diff[:self.Ny, :self.Nx];
+        return out_diff;
+    
+    def fftDiff2(self, m, n, Nx=256, Ny=256):
+        # Nx=1<<(self.Nx-1).bit_length();
+        # Ny=1<<(self.Ny-1).bit_length();
+        h = np.fft.fft2(self.Zarr, s=[Nx, Ny] );
+        # h = np.fft.fft2(ma.getdata(self.Zarr), s=[Nx, Ny] );
+        hshift = np.fft.fftshift(h);
+        # return np.real( np.fft.ifft2( np.fft.ifftshift(hshift) ) )
+        u = np.arange(Nx) - Nx/2.;
+        v = np.arange(Ny) - Ny/2.;
+        U,V = np.meshgrid(u,v);
+        hdiff = ( (1j*2*np.pi*U/Nx)**m )*( (1j*2*np.pi*V/Ny)**n ) * hshift;
+        out_diff = np.real( np.fft.ifft2( np.fft.ifftshift(hdiff) ) )/(self.dx**m)/(self.dy**n);
+        out_diff = out_diff[:self.Ny, :self.Nx];
+        return out_diff;
+        
+    
+    
+    def Gradient(self, edge_order=1, method='spacial'):
         # Zarr=ma.getdata(self.Zarr);
         # Zarr_yp=Zarr[2:, 1:-1];
         # Zarr_yn=Zarr[:-2, 1:-1];
@@ -110,8 +154,16 @@ class Field2d(object):
         # self.grad=[];
         # self.grad.append ( (Zarr_xp-Zarr_xn) / (2.*self.dx) )
         # self.grad.append ( (Zarr_yp-Zarr_yn) / (2.*self.dy) )
-        
-        self.grad=np.gradient( ma.getdata(self.Zarr), self.dx, self.dy, edge_order=edge_order)
+        if method=='spacial':
+            self.grad=np.gradient( ma.getdata(self.Zarr), self.dx, self.dy, edge_order=edge_order);
+        elif method=='freq':
+            diff_x=self.fftDiff2(m=1, n=0);
+            diff_y=self.fftDiff2(m=0, n=1);
+            self.grad=[];
+            self.grad.append(diff_x);
+            self.grad.append(diff_y);
+        # elif method=='sobel':
+            
         # self.grad[0]=self.grad[0][1:-1, 1:-1];
         # self.grad[1]=self.grad[1][1:-1, 1:-1];
         return;

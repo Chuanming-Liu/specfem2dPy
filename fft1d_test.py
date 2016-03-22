@@ -8,10 +8,13 @@ hf0=np.fft.fft(x, n=64);
 hf1=np.fft.fft(x, n=128);
 hf2=np.fft.fft(x);
 hf3=np.fft.fft(x,n=1024);
+xodd=np.sin(t[:99]);
+hfodd=np.fft.fft(xodd);
 f0=1/dt*2*np.arange(64)/64
 f1=1/dt*2*np.arange(128)/128
 f2=1/dt*2*np.arange(100)/100
 f3=1/dt*2*np.arange(1024)/1024
+
 plt.figure()
 plt.plot(f0, abs(hf0),'v-');
 plt.plot(f1, abs(hf1),'x-');

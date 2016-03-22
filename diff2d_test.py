@@ -28,32 +28,40 @@ def makeGaussian(size, fwhm = 3, center=None):
     return X,Y, np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
 X,Y, Z=makeGaussian(100, fwhm=10);
-# img = cv2.imread('messi5.jpg',0)
-h = np.fft.fft2(Z)
-hf = np.fft.fftshift(h)
-# magnitude_spectrum = np.abs(fshift)
-# u=np.arange(100.);
-# v=np.arange(100.);
+
+h1 = np.fft.fft2(Z)
+hf1 = np.fft.fftshift(h1)
 u=np.arange(100.)-50.;
 v=np.arange(100.)-50.;
 U,V,=np.meshgrid(u,v);
 m = 1; n = 1;
-hf2 = ((1j*2*pi*U/100)**m)*((1j*2*pi*V/100)**n)*hf;
-out_diff1 = np.real(np.fft.ifft2(np.fft.ifftshift(hf2)));
+diffhf1 = ((1j*2*pi*U/100)**m)*((1j*2*pi*V/100)**n)*hf1;
+out_diff1 = np.real(np.fft.ifft2(np.fft.ifftshift(diffhf1)));
 
-u=np.arange(100.)-49.;
-v=np.arange(100.)-49.;
+h2 = np.fft.fft2(Z,s=[128,128])
+hf2 = np.fft.fftshift(h2)
+u=np.arange(128.)-64.;
+v=np.arange(128.)-64.;
 U,V,=np.meshgrid(u,v);
 m = 1; n = 1;
-hf2 = ((1j*2*pi*U/100)**m)*((1j*2*pi*V/100)**n)*hf;
-out_diff2 = np.real(np.fft.ifft2(np.fft.ifftshift(hf2)));
+diffhf2 = ((1j*2*pi*U/128)**m)*((1j*2*pi*V/128)**n)*hf2;
+out_diff2 = np.real(np.fft.ifft2(np.fft.ifftshift(diffhf2)));
+out_diff2=out_diff2[:100,:100];
 
-# plt.subplot(121),plt.imshow(Z, cmap = 'seismic')
-# plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(122),plt.imshow(out_diff, cmap = 'seismic')
-# plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-# plt.show()
+# edge_roberts = roberts(image)
+edge_sobel = sobel(Z)
 
+plt.subplot(121),plt.imshow(Z, cmap = 'seismic')
+plt.title('Input Image'), plt.xticks([]), plt.yticks([])
+plt.subplot(122),plt.imshow(out_diff1, cmap = 'seismic')
+plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+plt.show()
+
+plt.subplot(121),plt.imshow(Z, cmap = 'seismic')
+plt.title('Input Image'), plt.xticks([]), plt.yticks([])
+plt.subplot(122),plt.imshow(out_diff2, cmap = 'seismic')
+plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+plt.show()
 
 # X,Y, Z=makeGaussian(100, fwhm=50);
 # spectrum=np.fft.fft2(Z)
