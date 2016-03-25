@@ -438,6 +438,10 @@ class WaveSnapshot(object):
             infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N);
             print 'Reading ',infname,' snapshot!' 
             InArr=np.loadtxt(infname);
+            try:
+                InArr=InArr[:,1];
+            except:
+                InArr=InArr;
             wfmax=max(wfmax, InArr.max() );
             wfmin=min(wfmin, InArr.min() );
             self.wfmax=max(wfmax, abs(wfmin));

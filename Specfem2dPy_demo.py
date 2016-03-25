@@ -8,9 +8,9 @@ InCheck=specfem2dPy.InputChecker(dt=0.05,
 InCheck.Check();
 
 ### Generate Station List
-SLst=specfem2dPy.StaLst();
-SLst.HomoStaLst(xmin=0, xmax=480000, zmin=0, zmax=480000, dx=3000, dz=3000);
-SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/STATIONS');
+# SLst=specfem2dPy.StaLst();
+# SLst.HomoStaLst(xmin=0, xmax=480000, zmin=0, zmax=480000, dx=3000, dz=3000);
+# SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/STATIONS');
 
 ### Velocity Model
 # Vm=specfem2dPy.VelocityModel(xmin=0, xmax=960000, Nx=160, zmin=0, zmax=960000, Nz=160);
@@ -22,7 +22,7 @@ Vm=specfem2dPy.VelocityModel(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz
 # # # # Vm.CircleHomoAnomaly(Xc=100000, Zc=100000, R=50000, Va=2000.)
 # # # # Vm.BlockHomoAnomaly(Xmin=0, Xmax=100000, Zmin=0, Zmax=180000, Va=3000);
 # Vm.plot()
-Vm.WriteModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat_lf')
+# Vm.WriteModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat_lf')
 # # # IC=specfem2dPy.InputChecker(dt=0.01, dx=5., dz=5., fc=0.1, lpd=4, vmin=3.0, vmax=3.5)
 # 
 # itest=np.loadtxt('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/proc000000_rho_vp_vs.dat');
@@ -34,12 +34,14 @@ Vm.WriteModel('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/DATA/pr
 # ## Wavefield Snapshots
 # WS=specfem2dPy.WaveSnapshot(xmin=0, xmax=960000, Nx=160, zmin=0, zmax=960000, Nz=160, datadir=
 #     '/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane/OUTPUT_FILES', nf=4800);
-# WS.ReadGridFile()
-# # # # WS.GetElementIndex()
-# # # WS.SaveElementIndex('.');
-# WS.LoadElementIndex('.');
-# # WS.ReadSnapshots();
-# # im_ani=WS.PlotSnapshots()
+WS=specfem2dPy.WaveSnapshot(xmin=0, xmax=480000, Nx=80, zmin=0, zmax=480000, Nz=80, datadir=
+    '/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_acoustic/OUTPUT_FILES', nf=4800);
+WS.ReadGridFile()
+# WS.GetElementIndex()
+# WS.SaveElementIndex('.');
+WS.LoadElementIndex('.');
+WS.ReadSnapshots();
+im_ani=WS.PlotSnapshots()
 # WS.ReadSingleSnap(1000)
 # WS.PlotSingleSnap()
 # 

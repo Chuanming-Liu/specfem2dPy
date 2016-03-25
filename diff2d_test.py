@@ -49,7 +49,7 @@ out_diff2 = np.real(np.fft.ifft2(np.fft.ifftshift(diffhf2)));
 out_diff2=out_diff2[:100,:100];
 
 # edge_roberts = roberts(image)
-edge_sobel = sobel(Z)
+# edge_sobel = sobel(Z)
 
 plt.subplot(121),plt.imshow(Z, cmap = 'seismic')
 plt.title('Input Image'), plt.xticks([]), plt.yticks([])
