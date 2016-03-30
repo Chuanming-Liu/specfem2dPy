@@ -142,7 +142,7 @@ class StaLst(object):
     
 class VelocityModel(object):
     
-    def __init__(self, xmin, xmax, Nx, zmin, zmax, Nz, Vp=4000., Vs=3500., Rho=2600., lpd=4, plotflag=True):
+    def __init__(self, xmin, xmax, Nx, zmin, zmax, Nz, Vp=4000., Vs=3000., Rho=2600., lpd=4, plotflag=True):
         self.xmin=xmin;
         self.xmax=xmax;
         self.Nx=Nx;
@@ -234,7 +234,7 @@ class VelocityModel(object):
         	self.VsArrPlot[Logic]=Va;
         return;
     
-    def CircleGradualAnomaly(self, Xc, Zc, R, Va):
+    def CircleLinearAnomaly(self, Xc, Zc, R, Va):
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2);
         dVa = Va - self.Vs;
         delD = R - dArr; 
@@ -245,6 +245,19 @@ class VelocityModel(object):
             delD = R - dArr;
             self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * delD/R * dVa + self.VsArrPlot;
         return;
+    
+    def CircleCosineAnomaly(self, Xc, Zc, R, Va):
+        dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2);
+        dVa = Va - self.Vs;
+        delD = R - dArr; 
+        self.VsArr = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dVa + self.VsArr;
+        if self.plotflag==True:
+            dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2);
+            dVa = Va - self.Vs;
+            delD = R - dArr;
+            self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dVa + self.VsArrPlot;
+        return;
+    
     
     def WriteModel(self, filename):
         N=self.XArr.size;
@@ -260,6 +273,7 @@ class VelocityModel(object):
     def get_GLL(self):
         """
         Set Gauss-Lobatto-Legendre(GLL) points for a given Lagrange polynomial degree.
+        To construct a polynomial of degree n passing through n+1 data points. 
         """
         if self.lpd == 2:
             knots = np.array([-1.0, 0.0, 1.0])
@@ -278,7 +292,7 @@ class VelocityModel(object):
         self.knots=knots;
         return
     
-    def plot(self, ds=1000, unit='km', vmin=2.5, vmax=4.5):
+    def plot(self, ds=1000, unit='km', vmin=2.5, vmax=3.5):
         if self.plotflag==False:
             raise ValueError('No plot array!');
         plt.figure(figsize=(16,12));
@@ -291,7 +305,7 @@ class VelocityModel(object):
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
             plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap='seismic_r', vmin=vmin, vmax=vmax);
-        plt.plot( 320, 320 , 'y*', markersize=30)
+        # plt.plot( 320, 320 , 'y*', markersize=30)
         plt.xlabel('x('+unit+')', fontsize=30);
         plt.ylabel('z('+unit+')', fontsize=30);
         plt.colorbar();
@@ -346,10 +360,14 @@ class InputChecker(object):
         dxArr=self.dx*np.diff( (0.5+0.5*(self.knots)) );
         dzArr=self.dz*np.diff( (0.5+0.5*(self.knots)) );
         dsmax=max(dxArr.max(), dzArr.max());
-        if dsmax * 16. > lambdamin:
+        if dsmax * 10. > lambdamin:
             raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' km');
         else:
             print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' km';
+        # if self.dx * 2. > lambdamin or self.dy * 2. > lambdamin:
+        #     raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' km');
+        # else:
+        #     print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' km';
         return
     
     def CheckCFLCondition(self, C=0.35):
@@ -430,7 +448,6 @@ class WaveSnapshot(object):
         self.index=np.load(infname);
         return;
     
-
     def ReadSnapshots(self):
         wfmax=-999;
         wfmin=999;
@@ -445,7 +462,7 @@ class WaveSnapshot(object):
             wfmax=max(wfmax, InArr.max() );
             wfmin=min(wfmin, InArr.min() );
             self.wfmax=max(wfmax, abs(wfmin));
-            snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
+            snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1);
             self.snapshots.append( snap[::-1, :] );
         return;
     
