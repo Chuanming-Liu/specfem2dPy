@@ -11,38 +11,21 @@ from scipy.ndimage.filters import convolve, gaussian_filter
 # def Convolve(im, inMask):
 #     return convolve(ma.getdata(im), inMask);
 
-SLst=specfem2dPy.StaLst();
-SLst.ReadStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
-SDB=symData2d.Specfem2dDataBase( enx=250000., enz=250000., StaLst=SLst);
-datadir='/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/OUTPUT_FILES'
-SDB.ReadtxtSeismograms(datadir=datadir);
-outdir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo'
-SDB.SaveSeismograms(outdir);
-# 
-# # SDB.ReadSeismograms(datadir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo')
-# 
-outdir='/lustre/janus_scratch/life9360/specfem2d_data/aftan_homo';
-predV=np.array([ [0.1, 3.5], [0.5, 3.5], [1.0, 3.5], [5.0, 3.5], [20.0, 3.5]])
-# 
-inftan=symData2d.InputFtanParam();
-inftan.setInParam(tmin=5.0, tmax=30.0, vmin=2.0, predV=predV);
-outdir='/lustre/janus_scratch/life9360/specfem2d_data/aftan_homo';
-SDB.aftanParallel(outdir=outdir, inftan=inftan);
-SDB.GetField2dFile(datadir='/lustre/janus_scratch/life9360/specfem2d_data/aftan_homo',
-                        outdir='/lustre/janus_scratch/life9360/specfem2d_data/field_homo', perLst=[10. ], outfmt='txt')
 
 ### Field Analysis
-# dx=3.
-# dy=3.
-# myfield=field2d.Field2d(Nx=480/dx, Ny=480/dx, dx=dx, dy=dy);
-# myfield.LoadFile('/lustre/janus_scratch/life9360/specfem2d_data/field_homo/TravelT.ph.10.0.txt')
-# myfield.natgridInterp();
-# # myfield.PlotField()
+dx=5.
+dy=5.
+myfield=field2d.Field2d(Nx=1000/dx, Ny=1000/dx, dx=dx, dy=dy);
+myfield.LoadFile('/lustre/janus_scratch/life9360/specfem2d_data/field_homo/TravelT.ph.10.0.txt')
+myfield.natgridInterp();
+# myfield.PlotField()
+# myfield.CuttingEdges(nx=20, ny=20, fieldtype='TravelT')
 # myfield.Gradient();
-# myfield.GetApparentV();
-# myfield.PlotAppV()
-# myfield.GetDoT(enx=240., eny=240.);
-# myfield.PlotDoT();
+myfield.Gradient(method='convolve', order=4);
+myfield.GetApparentV();
+myfield.PlotAppV()
+myfield.GetDoT(enx=250., eny=250.);
+myfield.PlotDoT();
 # 
 # dx=3.
 # dy=3.
@@ -77,7 +60,7 @@ SDB.GetField2dFile(datadir='/lustre/janus_scratch/life9360/specfem2d_data/aftan_
 # # plt.subplot(133),plt.imshow(outdiff1-outdiff2, cmap = 'seismic',vmin=-0.1,vmax=0.1)
 # # plt.colorbar()
 # # # plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-# # plt.show()
+plt.show()
 
 # plt.show()
 # myfield.LaplacianEqualXY()

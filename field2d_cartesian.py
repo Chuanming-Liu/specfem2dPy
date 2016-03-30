@@ -187,7 +187,7 @@ class Field2d(object):
         self.AppV=1./self.AppV;
         return;
     
-    def PlotAppV(self, vmin=3.4, vmax=3.6):
+    def PlotAppV(self, vmin=2.8, vmax=3.2):
         # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
         plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
@@ -208,7 +208,7 @@ class Field2d(object):
         self.DoT = Darr/ma.getdata(self.Zarr);
         return;
     
-    def PlotDoT(self, vmin=3.4, vmax=3.6):
+    def PlotDoT(self, vmin=2.8, vmax=3.2):
         # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
         plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)

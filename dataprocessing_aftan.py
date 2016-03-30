@@ -15,14 +15,15 @@ SLst=specfem2dPy.StaLst();
 SLst.ReadStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
 SDB=symData2d.Specfem2dDataBase( enx=250000., enz=250000., StaLst=SLst);
 datadir='/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/OUTPUT_FILES'
-SDB.ReadtxtSeismograms(datadir=datadir);
+# SDB.ReadtxtSeismograms(datadir=datadir);
 outdir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo'
-SDB.SaveSeismograms(outdir);
+# SDB.SaveSeismograms(outdir);
 # 
-# # SDB.ReadSeismograms(datadir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo')
+SDB.ReadSeismograms(datadir='/lustre/janus_scratch/life9360/specfem2d_data/SAC_homo')
 # 
 outdir='/lustre/janus_scratch/life9360/specfem2d_data/aftan_homo';
-predV=np.array([ [0.1, 3.5], [0.5, 3.5], [1.0, 3.5], [5.0, 3.5], [20.0, 3.5]])
+# predV=np.array([ [0.1, 3.5], [0.5, 3.5], [1.0, 3.5], [5.0, 3.5], [20.0, 3.5]])
+predV=np.array([ [0.1, 3.0], [0.5, 3.0], [1.0, 3.0], [5.0, 3.0], [20.0, 3.0]])
 # 
 inftan=symData2d.InputFtanParam();
 inftan.setInParam(tmin=5.0, tmax=30.0, vmin=2.0, predV=predV);
