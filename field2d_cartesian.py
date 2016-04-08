@@ -16,6 +16,13 @@ Y_diff_weight_4 = X_diff_weight_4.T;
 X_diff_weight_6 = np.array([[1./60., 	-3./20.,  3./4.,  0., -3./4., 3./20.,  -1./60.]]);
 Y_diff_weight_6 = X_diff_weight_6.T;
 
+X_diff2_weight_2 = np.array([[1., -2., 1.]]);
+Y_diff2_weight_2 = X_diff2_weight_2.T;
+X_diff2_weight_4 = np.array([[-1., 16., -30., 16., -1.]])/12.;
+Y_diff2_weight_4 = X_diff2_weight_4.T;
+X_diff2_weight_6 = np.array([[1./90., 	-3./20.,  3./2.,  -49./18., 3./2., -3./20.,  1./90.]]);
+Y_diff2_weight_6 = X_diff2_weight_6.T;
+
 
 class Field2d(object):
     def __init__(self, Nx, Ny, dx, dy):
@@ -187,7 +194,7 @@ class Field2d(object):
         self.AppV=1./self.AppV;
         return;
     
-    def PlotAppV(self, vmin=2.8, vmax=3.2):
+    def PlotAppV(self, vmin=2.9, vmax=3.1):
         # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
         plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
@@ -208,7 +215,7 @@ class Field2d(object):
         self.DoT = Darr/ma.getdata(self.Zarr);
         return;
     
-    def PlotDoT(self, vmin=2.8, vmax=3.2):
+    def PlotDoT(self, vmin=2.9, vmax=3.1):
         # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
         plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
@@ -230,15 +237,30 @@ class Field2d(object):
         self.lplc=self.lplc[1:-1, 1:-1];
         return;
     
-    def Laplacian(self):
+    def Laplacian(self, method='default', order=2):
         Zarr=ma.getdata(self.Zarr);
-        Zarr_yp=Zarr[2:, 1:-1];
-        Zarr_yn=Zarr[:-2, 1:-1];
-        Zarr_xp=Zarr[1:-1, 2:];
-        Zarr_xn=Zarr[1:-1, :-2];
-        Zarr=Zarr[1:-1, 1:-1]
-        self.lplc=(Zarr_yp+Zarr_yn-2*Zarr) / (self.dy**2) + (Zarr_xp+Zarr_xn-2*Zarr) / (self.dx**2);
+        if method == 'default':
+            Zarr_yp=Zarr[2:, 1:-1];
+            Zarr_yn=Zarr[:-2, 1:-1];
+            Zarr_xp=Zarr[1:-1, 2:];
+            Zarr_xn=Zarr[1:-1, :-2];
+            Zarr=Zarr[1:-1, 1:-1]
+            self.lplc=(Zarr_yp+Zarr_yn-2*Zarr) / (self.dy**2) + (Zarr_xp+Zarr_xn-2*Zarr) / (self.dx**2);
+        elif method == 'convolve':
+            if order==2:
+                diff2_x=convolve( ma.getdata(self.Zarr), X_diff2_weight_2)/self.dx/self.dx;
+                diff2_y=convolve(ma.getdata(self.Zarr), Y_diff2_weight_2)/self.dy/self.dy;
+            elif order==4:
+                diff2_x=convolve( ma.getdata(self.Zarr), X_diff2_weight_4)/self.dx/self.dx;
+                diff2_y=convolve(ma.getdata(self.Zarr), Y_diff2_weight_4)/self.dy/self.dy;
+            elif order==6:
+                diff2_x=convolve( ma.getdata(self.Zarr), X_diff2_weight_6)/self.dx/self.dx;
+                diff2_y=convolve(ma.getdata(self.Zarr), Y_diff2_weight_6)/self.dy/self.dy;
+            self.lplc=diff2_x+diff2_y;
+            self.lplc=self.lplc[1:-1, 1:-1];
         return;
+    
+    
     
     def PlotLaplacian(self):
         fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
@@ -249,7 +271,7 @@ class Field2d(object):
         plt.axis([self.x[1], self.x[-2], self.y[1], self.y[-2]]);
         plt.xlabel('km');
         plt.ylabel('km');
-        plt.show();
+        # plt.show();
         return;
     
     def GetLplcCorrection(self, per):
@@ -259,7 +281,8 @@ class Field2d(object):
         return
     
     def PlotLplcCo(self):
-        fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
+        # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
+        plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
         # zi = griddata(self.XarrIn, self.YarrIn, self.ZarrIn, xi, yi )
         plt.pcolormesh(self.Xarr[1:-1, 1:-1], self.Yarr[1:-1, 1:-1], self.lplcCo, cmap='seismic', shading='gouraud' , vmin=-0.01, vmax=0.01);
@@ -272,10 +295,13 @@ class Field2d(object):
     
     def GetCorV(self, inAmpField):
         lplcCo=inAmpField.lplcCo;
-        self.CorV=1./ np.sqrt(1./(self.AppV**2) - lplcCo);
+        try:
+            self.CorV=1./ np.sqrt(1./(self.AppV**2) - lplcCo);
+        except:
+            self.CorV=1./ np.sqrt(1./(self.AppV[1:-1, 1:-1]**2) - lplcCo);
         return;
     
-    def PlotCorV(self, vmin=1.5, vmax=4.5):
+    def PlotCorV(self, vmin=2.9, vmax=3.1):
         # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k');
         plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
