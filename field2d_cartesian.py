@@ -66,6 +66,8 @@ class Field2d(object):
             raise TypeError('Wrong output format!')
         return;
         
+    def interpTest(self, ):
+        pass
     
     def Interp(self, kind='cubic', copy=True, bounds_error=False, fill_value=np.nan):
         if self.Xarr.size == self.XarrIn.size:
@@ -315,5 +317,127 @@ class Field2d(object):
         # plt.show();
         return;
     
+    
+class WaveSnapshot(object):
+    def __init__(self, datadir, xmax, Nx, zmax, Nz, nf, xmin=0, zmin=0, ni=5, dn=10,
+        pfx='wavefield', sfx='_01_000.txt', gridfname='wavefield_grid_for_dumps_000.txt', lpd=4):
+
+        self.datadir=datadir;
+        self.pfx=pfx;
+        self.sfx=sfx;
+        self.snapshots=[];
+        Ns=int(nf/dn);
+        self.Narr=np.arange(Ns)*dn+dn;
+        self.Narr=np.append(ni, self.Narr);
+        self.gridfname=gridfname;
+        self.dx=(xmax-xmin)/Nx/2;
+        self.dz=(zmax-zmin)/Nz/2;
+        self.Nx=2*Nx;
+        self.Nz=2*Nz;
+        self.lpd=lpd;
+        XArr = np.arange(2*Nx+1)*self.dx+xmin;
+        ZArr = np.arange(2*Nz+1)*self.dz+zmin;
+        self.XArr, self.ZArr = np.meshgrid(XArr, ZArr); 
+        return;
+    
+    def ReadGridFile(self):
+        print 'Reading Grid File!';
+        infname=self.datadir+'/'+self.gridfname;
+        InArr=np.loadtxt(infname);
+        self.xArrIn=InArr[:,0];
+        self.zArrIn=InArr[:,1];
+        self.xmin=self.xArrIn.min();
+        self.xmax=self.xArrIn.max();
+        self.zmin=self.zArrIn.min();
+        self.zmax=self.zArrIn.max();
+        print 'End Reading Grid File!';
+        return;
+    
+    def GetElementIndex(self):
+        print 'Getting element indices !';
+        XArr=self.XArr.reshape( (self.Nx+1)*(self.Nz+1) );
+        ZArr=self.ZArr.reshape( (self.Nx+1)*(self.Nz+1) );
+        self.index=np.array([],dtype=int)
+        for i in np.arange( (self.Nx+1)*(self.Nz+1) ):
+            x=XArr[i];
+            z=ZArr[i];
+            Logic = (self.xArrIn==x)*(self.zArrIn==z);
+            index=int(np.where(Logic==True)[0][0])
+            self.index=np.append(self.index, index)
+        print 'End getting element indices !';
+        return;
+    
+    def SaveElementIndex(self, outdir):
+        outfname=outdir+'/index.npy';
+        np.save(outfname, self.index);
+        return;
+    
+    def LoadElementIndex(self, datadir):
+        infname=datadir+'/index.npy';
+        self.index=np.load(infname);
+        return;
+    
+    def ReadSnapshots(self):
+        wfmax=-999;
+        wfmin=999;
+        for N in self.Narr:
+            infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N);
+            print 'Reading ',infname,' snapshot!' 
+            InArr=np.loadtxt(infname);
+            try:
+                InArr=InArr[:,1];
+            except:
+                InArr=InArr;
+            wfmax=max(wfmax, InArr.max() );
+            wfmin=min(wfmin, InArr.min() );
+            self.wfmax=max(wfmax, abs(wfmin));
+            snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1);
+            self.snapshots.append( snap[::-1, :] );
+        return;
+    
+    def PlotSnapshots(self, ds=1000., factor=5., outfname=None):
+        fig = plt.figure(figsize=(16,12))
+        ims = [];
+        i=0;
+        for snap in self.snapshots:
+            i=i+1
+            print 'Plotting ',i,' snapshot!' 
+            im=plt.imshow(snap, cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
+                    vmin = -self.wfmax/factor, vmax = self.wfmax/factor);
+            ims.append([im])
+        im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000, blit=True)
+        plt.xlabel('x (km)')
+        plt.ylabel('z (km)')
+        if outfname!=None:
+            im_ani.save(outfname, )
+        plt.show()
+        return im_ani
+    
+    def ReadSingleSnap(self, N):
+        wfmax=-999;
+        wfmin=999;
+        infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N);
+        print 'Reading ',infname,' snapshot!' 
+        InArr=np.loadtxt(infname);
+        wfmax=max(wfmax, InArr.max() );
+        wfmin=min(wfmin, InArr.min() );
+        self.wfmax=max(wfmax, abs(wfmin));
+        snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
+        self.singleSnap=snap
+        return;
+    
+    def PlotSingleSnap(self, unit='km', ds=1000., factor=1., outfname=None):
+        fig = plt.figure(figsize=(16,12))
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
+        plt.plot( 320, 320 , 'y*', markersize=30)
+        plt.xlabel('x('+unit+')', fontsize=30);
+        plt.ylabel('z('+unit+')', fontsize=30);
+        plt.colorbar();
+        plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds]);
+        # plt.axis('scaled');
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.show()
+        return im
     
 

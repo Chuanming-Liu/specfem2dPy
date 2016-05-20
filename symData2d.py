@@ -821,6 +821,7 @@ class InputFtanParam(object): ###
         self.fmatch=1.0
         self.fhlen=0.008
         self.dosnrflag=False
+        self.predV=np.array([])
 
     def setInParam(self, pmf=False, piover4=-1.0, vmin=1.5, vmax=5.0, tmin=4.0, \
         tmax=30.0, tresh=20.0, ffact=1.0, taperl=1.0, snr=0.2, fmatch=1.0, fhlen=0.008, dosnrflag=False, predV=np.array([]) ):
