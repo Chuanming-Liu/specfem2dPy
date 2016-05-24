@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 import numpy.ma as ma
-    
+import warnings
+
 class vmodel(object):
     """
     An object to handle input model for SPECFEM2D.
@@ -13,7 +14,11 @@ class vmodel(object):
                                                 ( [number of grid points] = [element number] * [lpd+1] )
     Vp, Vs, Rho                        - background Vp/Vs/density
     lpd                                     - Lagrange polynomial degree
-    plotflag                              - whether to store numpy arrays for plotting purpose 
+    plotflag                              - whether to store numpy arrays for plotting purpose
+    
+    Notes:
+    Nx, Nz is completely different from ni, nj in SW4. In SW4, ni, nj, nk are number of grid points,
+    while Nx, Nz here are element numbers, which can be analogically regarded as block numbers.  
     --------------------------------------------------------------------------------------------------------------
     """
     def __init__(self, xmin, xmax, Nx, zmin, zmax, Nz, Vp=4000., Vs=3000., Rho=2600., lpd=4, plotflag=True):
@@ -191,7 +196,16 @@ class vmodel(object):
             self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArrPlot
         return
     
-    def write(self, outfname):
+    def write(self, outfname, dt=None, fc=None, freqfactor=2.5, C=0.35):
+        """
+        Write vmodel to txt file that can be read by SPECFEM2D
+        """
+        if dt ==None and fc == None:
+            warnings.warn('Skip input checker, may cause problem in simulation!', UserWarning, stacklevel=1)
+        else:
+            vmin, vmax = self.GetMinMaxV()
+            checker=InputChecker(dt=dt, dx=self.dx, dz=self.dz, fc=fc, lpd=self.lpd, vmin=vmin, vmax=vmax)
+            checker.Check(freqfactor=freqfactor, C=C)
         N=self.XArr.size
         OutArr=np.append(self.XArr, self.ZArr)
         OutArr=np.append(OutArr, self.RhoArr)
@@ -225,6 +239,14 @@ class vmodel(object):
         return
     
     def plot(self, ds=1000, unit='km', vmin=2.5, vmax=3.5):
+        """Plot velocity model
+        -----------------------------------------------------------------------------------------------------
+        Input Parameters:
+        ds                          - grid spacing
+        unit                       - unit
+        vmin, vmax           - vmin,vmax for colorbar
+        -----------------------------------------------------------------------------------------------------
+        """
         if self.plotflag==False:
             raise ValueError('No plot array!')
         plt.figure(figsize=(16,12))
@@ -249,6 +271,9 @@ class vmodel(object):
         return
     
     def GetMinMaxV(self):
+        """
+        Get minimum/maximum vs 
+        """
         vmin=self.VsArr.min()
         vmax=self.VsArr.max()
         return vmin, vmax
@@ -279,6 +304,7 @@ class InputChecker(object):
     def get_GLL(self):
         """
         Set Gauss-Lobatto-Legendre(GLL) points for a given Lagrange polynomial degree.
+        To construct a polynomial of degree n passing through n+1 data points. 
         """
         if self.lpd == 2:
             knots = np.array([-1.0, 0.0, 1.0])
@@ -308,10 +334,11 @@ class InputChecker(object):
         dxArr=self.dx*np.diff( (0.5+0.5*(self.knots)) )
         dzArr=self.dz*np.diff( (0.5+0.5*(self.knots)) )
         dsmax=max(dxArr.max(), dzArr.max())
-        if dsmax * 10. > lambdamin:
-            raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' km')
+        # dsmax=max(self.dx, self.dz)
+        if dsmax * 4.5 > lambdamin:
+            raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' m')
         else:
-            print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' km'
+            print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' m'
         # if self.dx * 2. > lambdamin or self.dy * 2. > lambdamin:
         #     raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' km')
         # else:
