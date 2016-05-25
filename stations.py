@@ -10,10 +10,10 @@ class StaInfo(object):
     An object contains a station information several methods for station related analysis.
     -----------------------------------------------------------------------------------------------------
     General Parameters:
-    stacode     - station name
-    network     - network
-    chan        - channels for analysis
-    x, z     - position for station (in meters)
+    stacode       - station name
+    network      - network
+    chan           - channels for analysis
+    x, z             - position for station (in meters)
     -----------------------------------------------------------------------------------------------------
     """
     def __init__(self, stacode=None, network='ME2D', x=None, z=None):

@@ -12,7 +12,8 @@ import pyasdf
 import stations
 
 class ftanParam(object):
-    """
+    """ An object to handle ftan output parameters
+    -----------------------------------------------------------------------------------------------------
     Basic FTAN parameters:
     nfout1_1 - output number of frequencies for arr1, (integer*4)
     arr1_1   - preliminary results.
@@ -78,6 +79,7 @@ class ftanParam(object):
     ierr_2   - completion status, =0 - O.K.,           (integer*4)
                                 =1 - some problems occures
                                 =2 - no final results
+    -----------------------------------------------------------------------------------------------------
     """
     def __init__(self):
         # Parameters for first iteration
@@ -861,15 +863,11 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         pool.close() #we are not adding any more processes
         pool.join() #tell it to wait until all threads are done before going on
         return
-        
-        
     
 def aftanManager():
     m = BaseManager()
     m.start()
     return m
-
-
 
 def aftan4mp(nTr, inftan):
     

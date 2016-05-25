@@ -326,15 +326,15 @@ class WaveSnapshot(object):
     --------------------------------------------------------------------------------------------------------------
     Parameters:
     datadir            - data directory
-    pfx                  - input file prefix
-    sfx                   - input file suffix
+    pfx                   - input file prefix
+    sfx                    - input file suffix
     gridfname       - grid point file name
     snapshots        - snapshot list
-    Narr                 - snapshot number array
+    Narr                - snapshot number array
     dx, dz              - (half) element size
     Nx, Nz            - (doubled) element number in x, z 
                                 note that some data points locate at the mid point between two element point 
-    XArr, ZArr     - arrays for element location
+    XArr, ZArr    - arrays for element location
     lpd                   - Lagrange polynomial degree
     --------------------------------------------------------------------------------------------------------------
     """
@@ -371,7 +371,7 @@ class WaveSnapshot(object):
         """
         Read grid point file
         """
-        print 'Reading Grid File!'
+        print 'Reading Grid File !'
         infname=self.datadir+'/'+self.gridfname
         InArr=np.loadtxt(infname)
         self.xArrIn=InArr[:,0]
@@ -380,7 +380,7 @@ class WaveSnapshot(object):
         self.xmax=self.xArrIn.max()
         self.zmin=self.zArrIn.min()
         self.zmax=self.zArrIn.max()
-        print 'End Reading Grid File!'
+        print 'End Reading Grid File !'
         return
     
     def GetElementIndex(self):
@@ -388,14 +388,17 @@ class WaveSnapshot(object):
         Get the element indices
         """
         print 'Getting element indices !'
-        XArr=self.XArr.reshape( (self.Nx+1)*(self.Nz+1) )
-        ZArr=self.ZArr.reshape( (self.Nx+1)*(self.Nz+1) )
+        Ntotal=(self.Nx+1)*(self.Nz+1)
+        XArr=self.XArr.reshape( Ntotal )
+        ZArr=self.ZArr.reshape( Ntotal )
         self.index=np.array([],dtype=int)
-        for i in np.arange( (self.Nx+1)*(self.Nz+1) ):
+        for i in np.arange( Ntotal ):
+            if i%1000==0:
+                print 'Step:', i, 'of', Ntotal
             x=XArr[i]
             z=ZArr[i]
             Logic = (self.xArrIn==x)*(self.zArrIn==z)
-            index=int(np.where(Logic==True)[0][0])
+            index=int( np.where( Logic==True)[0][0] )
             self.index=np.append(self.index, index)
         print 'End getting element indices !'
         return

@@ -13,8 +13,8 @@ class vmodel(object):
     Nx, Nz                                - element number in x, z
                                                 ( [number of grid points] = [element number] * [lpd+1] )
     Vp, Vs, Rho                        - background Vp/Vs/density
-    lpd                                     - Lagrange polynomial degree
-    plotflag                              - whether to store numpy arrays for plotting purpose
+    lpd                                       - Lagrange polynomial degree
+    plotflag                                - whether to store numpy arrays for plotting purpose
     
     Notes:
     Nx, Nz is completely different from ni, nj in SW4. In SW4, ni, nj, nk are number of grid points,
@@ -98,9 +98,9 @@ class vmodel(object):
         Inplement block anomaly in the model for Vs
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        Xmin, Xmax, Zmin, Zmax - defines the bound
-        va                                     - anomalous velocity
-        dv                                     - velocity anomaly in percentage( default is None, which means use va )
+        Xmin, Xmax, Zmin, Zmax   - defines the bound
+        va                                           - anomalous velocity
+        dv                                          - velocity anomaly in percentage( default is None, which means use va )
         -----------------------------------------------------------------------------------------------------
         """
         Xlogic=(self.XArr>=Xmin)*(self.XArr<=Xmax)
@@ -125,21 +125,21 @@ class vmodel(object):
         Inplement circle anomaly in the model for Vs
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        Xc, Zc      - the center of the circle
-        R             - radius
+        Xc, Zc    - the center of the circle
+        R            - radius
         va           - anomalous velocity
         dv           - velocity anomaly in percentage( default is None, which means use va )
         -----------------------------------------------------------------------------------------------------
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        Logic = dArr < R
+        Logic = dArr <= R
         if dv!=None:
             self.VsArr[Logic]=self.VsArr[Logic]*(1+dv)
         else:
             self.VsArr[Logic]=va
         if self.plotflag==True:
             dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
-            Logic = dArr < R
+            Logic = dArr <= R
             if dv!=None:
                 self.VsArrPlot[Logic] = self.VsArrPlot[Logic]*(1+dv)
             else:
@@ -152,8 +152,8 @@ class vmodel(object):
         Assuming the background Vs is homogeneous
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        Xc, Zc      - the center of the circle
-        R             - radius
+        Xc, Zc    - the center of the circle
+        R            - radius
         va           - anomalous velocity
         dv           - velocity anomaly in percentage( default is None, which means use va )
         -----------------------------------------------------------------------------------------------------
@@ -177,10 +177,10 @@ class vmodel(object):
         Assuming the background Vs is homogeneous
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        Xc, Zc      - the center of the circle
+        Xc, Zc     - the center of the circle
         R             - radius
-        va           - anomalous velocity
-        dv           - velocity anomaly in percentage( default is None, which means use va )
+        va            - anomalous velocity
+        dv            - velocity anomaly in percentage( default is None, which means use va )
         -----------------------------------------------------------------------------------------------------
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
@@ -244,12 +244,12 @@ class vmodel(object):
         Input Parameters:
         ds                          - grid spacing
         unit                       - unit
-        vmin, vmax           - vmin,vmax for colorbar
+        vmin, vmax          - vmin,vmax for colorbar
         -----------------------------------------------------------------------------------------------------
         """
         if self.plotflag==False:
             raise ValueError('No plot array!')
-        plt.figure(figsize=(16,12))
+        plt.figure(figsize=(16,13))
         if self.regular==True:
             plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap='seismic_r', vmin=vmin, vmax=vmax)
         else:
