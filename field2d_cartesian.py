@@ -403,6 +403,29 @@ class WaveSnapshot(object):
         print 'End getting element indices !'
         return
     
+    def GetElementIndexMP(self):
+        """
+        Get the element indices (multiprocessing)
+        """
+        print 'Getting element indices !'
+        Ntotal=(self.Nx+1)*(self.Nz+1)
+        XArr=self.XArr.reshape( Ntotal )
+        ZArr=self.ZArr.reshape( Ntotal )
+        self.xArrIn
+        self.zArrIn
+        index=np.array([],dtype=int)
+        for i in np.arange( Ntotal ):
+            if i%1000==0:
+                print 'Step:', i, 'of', Ntotal
+            x=XArr[i]
+            z=ZArr[i]
+            Logic = (self.xArrIn==x)*(self.zArrIn==z)
+            index=int( np.where( Logic==True)[0][0] )
+            self.index=np.append(self.index, index)
+        print 'End getting element indices !'
+        return
+    
+    
     def SaveElementIndex(self, outdir):
         """
         Save the element indices
