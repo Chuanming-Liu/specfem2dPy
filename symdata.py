@@ -824,7 +824,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
             self.add_auxiliary_data(data=FieldArr, data_type='Field'+data_type, path=tempdict[fieldtype]+str(int(per)), parameters=outindex)
         return
     
-    def aftanParallel(self, tb=0.0, outdir=None, inftan=InputFtanParam(), vph=3.0, basic1=True, basic2=False,
+    def aftanMP(self, tb=0.0, outdir=None, inftan=InputFtanParam(), vph=3.0, basic1=True, basic2=False,
             pmf1=False, pmf2=False):
         """
         Code need checking
@@ -857,11 +857,54 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
             # aftan analysis
             ntrace=specfem2dtrace(tr.data, tr.stats)
             noiseStream.append(ntrace)
+            knetwkLst=np.append(knetwkLst, tr.stats.network)
+            kstnmLst=np.append(kstnmLst, tr.stats.station)
         AFTAN = partial(aftan4mp, inftan=inftan)
         pool =multiprocessing.Pool(processes=2)
         FLst=pool.map(AFTAN, noiseStream, chunksize=2) #make our results with a map call
         pool.close() #we are not adding any more processes
         pool.join() #tell it to wait until all threads are done before going on
+        print 'End of aftan analysis  ( MP ) !'
+        print 'Reading aftan results into ASDF Dataset!'
+        for i in np.arange(knetwkLst.size):
+            # Get data from ASDF dataset
+            station_id=knetwkLst[i]+'.'+kstnmLst[i]
+            # print 'Reading aftan results',station_id
+            station_id_aux=knetwkLst[i]+kstnmLst[i]
+            f10=np.load(outdir+'/'+station_id+'_1_DISP.0.npz')
+            f11=np.load(outdir+'/'+station_id+'_1_DISP.1.npz')
+            f20=np.load(outdir+'/'+station_id+'_2_DISP.0.npz')
+            f21=np.load(outdir+'/'+station_id+'_2_DISP.1.npz')
+            if deletedisp==True:
+                os.remove(outdir+'/'+station_id+'_1_DISP.0.npz')
+                os.remove(outdir+'/'+station_id+'_1_DISP.1.npz')
+                os.remove(outdir+'/'+station_id+'_2_DISP.0.npz')
+                os.remove(outdir+'/'+station_id+'_2_DISP.1.npz')
+            arr1_1=f10['arr_0']
+            nfout1_1=f10['arr_1']
+            arr2_1=f11['arr_0']
+            nfout2_1=f11['arr_1']
+            arr1_2=f20['arr_0']
+            nfout1_2=f20['arr_1']
+            arr2_2=f21['arr_0']
+            nfout2_2=f21['arr_1']
+            if basic1==True:
+                parameters={'Tc': 0, 'To': 1, 'Vgr': 2, 'Vph': 3, 'ampdb': 4, 'dis': 5, 'snrdb': 6, 'mhw': 7, 'amp': 8, 'Np': nfout1_1,
+                        'knetwk': str(knetwkLst[i]), 'kstnm': str(kstnmLst[i])}
+                self.add_auxiliary_data(data=arr1_1, data_type='DISPbasic1', path=station_id_aux, parameters=parameters)
+            if basic2==True:
+                parameters={'Tc': 0, 'To': 1, 'Vgr': 2, 'Vph': 3, 'ampdb': 4, 'snrdb': 5, 'mhw': 6, 'amp': 7, 'Np': nfout2_1,
+                        'knetwk': str(knetwkLst[i]), 'kstnm': str(kstnmLst[i])}
+                self.add_auxiliary_data(data=arr2_1, data_type='DISPbasic2', path=station_id_aux, parameters=parameters)
+            if inftan.pmf==True:
+                if pmf1==True:
+                    parameters={'Tc': 0, 'To': 1, 'Vgr': 2, 'Vph': 3, 'ampdb': 4, 'dis': 5, 'snrdb': 6, 'mhw': 7, 'amp': 8, 'Np': nfout1_2,
+                        'knetwk': str(knetwkLst[i]), 'kstnm': str(kstnmLst[i])}
+                    self.add_auxiliary_data(data=arr1_2, data_type='DISPpmf1', path=station_id_aux, parameters=parameters)
+                if pmf2==True:
+                    parameters={'Tc': 0, 'To': 1, 'Vgr': 2, 'Vph': 3, 'ampdb': 4, 'snrdb': 5, 'mhw': 6, 'amp': 7, 'Np': nfout2_2,
+                        'knetwk': str(knetwkLst[i]), 'kstnm': str(kstnmLst[i])}
+                    self.add_auxiliary_data(data=arr2_2, data_type='DISPpmf2', path=station_id_aux, parameters=parameters)
         return
     
 def aftanManager():

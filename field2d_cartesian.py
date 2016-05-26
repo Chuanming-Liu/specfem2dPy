@@ -402,7 +402,8 @@ class WaveSnapshot(object):
             z=ZArr[i]
             Logic = (self.xArrIn==x)*(self.zArrIn==z)
             index=int( np.where( Logic==True)[0][0] )
-            self.index=np.append(self.index, index)
+            self.index=np.a
+            ppend(self.index, index)
         print 'End getting element indices !'
         return
     

@@ -4,6 +4,7 @@ from matplotlib.mlab import griddata
 import numpy.ma as ma
 import matplotlib.animation as animation
 import obspy
+import os
 
 class StaInfo(object):
     """
@@ -170,6 +171,43 @@ class StaLst(object):
         if outfname!=None:
             inv.write(outfname, format='stationxml')
         return inv
+    
+        
+    def SelectStations(self, x=None, z=None, x0=None, z0=None, dist=None, outflag=True, xmin=-1e10, xmax=1e10, zmin=-1e10, zmax=1e10):
+        """
+        Select a subset of stations from original station list
+        -----------------------------------------------------------------------------------------------------
+        Input Parameters:
+        x, z        - if specified, only append stations with x ==
+        -----------------------------------------------------------------------------------------------------
+        """
+        if x==None and z == None and ( x0==None or z0==None or dist==None):
+            raise ValueError("At least one of x or y need to be specified!")
+        newSLst=StaLst()
+        for sta in self.stations:
+            if x0!=None or z0!=None or dist!=None:
+                stadist=np. sqrt ( (sta.x-x0)**2 +(sta.z-z0)**2 )
+                if stadist < dist and outflag==True:
+                    continue
+                elif stadist > dist and outflag==False:
+                    continue
+            if x!=None:
+                if sta.x==x and sta.z>zmin and sta.z<zmax:
+                    newSLst.append(sta)
+            if z!=None:
+                if sta.z==z and sta.x>xmin and sta.x<xmax:
+                    newSLst.append(sta)
+        return newSLst
+    
+    def GetStation(self, datadir):
+        newSLst=StaLst()
+        for sta in self.stations:
+            txtfname = datadir+'/'+sta.network+'.'+sta.stacode+'.'+'BXY.semd'
+            if not os.path.isfile(txtfname):
+                continue
+            newSLst.append(sta)
+        return newSLst
+    
     
     
 
