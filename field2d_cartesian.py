@@ -10,6 +10,8 @@ from math import pi
 from scipy.ndimage import convolve
 import matplotlib.animation as animation
 import pyasdf
+import multiprocessing
+from functools import partial
 
 X_diff_weight_2 = np.array([[1., 0., -1.]])/2.
 Y_diff_weight_2 = X_diff_weight_2.T
@@ -370,6 +372,7 @@ class WaveSnapshot(object):
     def ReadGridFile(self):
         """
         Read grid point file
+        number of grid points = (NelementX*lpd+1) * (NelementZ*lpd+1)
         """
         print 'Reading Grid File !'
         infname=self.datadir+'/'+self.gridfname
@@ -403,7 +406,7 @@ class WaveSnapshot(object):
         print 'End getting element indices !'
         return
     
-    def GetElementIndexMP(self):
+    def GetElementIndexMP(self, NLst):
         """
         Get the element indices (multiprocessing)
         """
@@ -411,9 +414,13 @@ class WaveSnapshot(object):
         Ntotal=(self.Nx+1)*(self.Nz+1)
         XArr=self.XArr.reshape( Ntotal )
         ZArr=self.ZArr.reshape( Ntotal )
-        self.xArrIn
-        self.zArrIn
+        
         index=np.array([],dtype=int)
+        GETELEMENT = partial(GetElementMP, inWS=self)
+        pool =multiprocessing.Pool(processes=2)
+        pool.map(GETELEMENT, noiseStream, chunksize=2) #make our results with a map call
+        pool.close() #we are not adding any more processes
+        pool.join() #tell it to wait until all threads are done before going on
         for i in np.arange( Ntotal ):
             if i%1000==0:
                 print 'Step:', i, 'of', Ntotal

@@ -17,9 +17,9 @@ SLst.WriteStaList('STATIONS')
 ### Velocity Model
 Vm=vmodel.vmodel(xmin=0, xmax=3000000+2*Dx, Nx=640, zmin=0, zmax=600000+2*Dz, Nz=520, Vs=3231.62)
 Vm.read('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_0.1_20/DATA/proc000000_rho_vp_vs.dat')
-Vm.CircleHomoAnomaly(Xc=1500000+Dx+800000, Zc=300000+Dz, R=100000, va=3518.03)
-Vm.CircleHomoAnomaly(Xc=1500000+Dx-800000, Zc=300000+Dz, R=100000, va=2914.47)
-Vm.write('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_0.1_20/DATA/proc000000_rho_vp_vs.dat')
+# Vm.CircleHomoAnomaly(Xc=1500000+Dx+800000, Zc=300000+Dz, R=100000, va=3518.03)
+# Vm.CircleHomoAnomaly(Xc=1500000+Dx-800000, Zc=300000+Dz, R=100000, va=2914.47)
+# Vm.write('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_0.1_20/DATA/proc000000_rho_vp_vs.dat')
 # # 
 # Vm.write('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH_0.1_20/DATA/proc000000_rho_vp_vs.dat',
 #          dt=0.05, fc=0.1)
