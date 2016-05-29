@@ -3,7 +3,7 @@ import symdata
 
 # dbase=symdata.specfem2dASDF('synthetics_50.h5')
 dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/LFMembrane_SH_0.1_20/specfem2d.h5')
-dbase.readtxt('STATIONS_z_300_t',
+dbase.readtxt('STATIONS_z_300',
         datadir='/lustre/janus_scratch/life9360/LFMembrane_SH_0.1_20/OUTPUT_FILES')
 dbase.AddEvent(x=1600., z=1300.)
 inftan=symdata.InputFtanParam()
