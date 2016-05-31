@@ -9,6 +9,7 @@ from math import pi
 # from skimage.filters import roberts, sobel, scharr, prewitt
 from scipy.ndimage import convolve
 import matplotlib.animation as animation
+import matplotlib
 import pyasdf
 import multiprocessing
 from functools import partial
@@ -327,16 +328,16 @@ class WaveSnapshot(object):
     An object to handle output wavefield from SPECFEM2D.
     --------------------------------------------------------------------------------------------------------------
     Parameters:
-    datadir            - data directory
+    datadir             - data directory
     pfx                   - input file prefix
     sfx                    - input file suffix
-    gridfname       - grid point file name
-    snapshots        - snapshot list
-    Narr                - snapshot number array
-    dx, dz              - (half) element size
-    Nx, Nz            - (doubled) element number in x, z 
+    gridfname        - grid point file name
+    snapshots         - snapshot list
+    Narr                 - snapshot number array
+    dx, dz               - (half) element size
+    Nx, Nz             - (doubled) element number in x, z 
                                 note that some data points locate at the mid point between two element point 
-    XArr, ZArr    - arrays for element location
+    XArr, ZArr      - arrays for element location
     lpd                   - Lagrange polynomial degree
     --------------------------------------------------------------------------------------------------------------
     """
@@ -345,7 +346,7 @@ class WaveSnapshot(object):
         """ 
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        xmin, zmax    - bound of study region
+        xmin, zmax     - bound of study region
         nt                     - number of total time step
         ni                     - initial time step number
         dn                    - time step interval
@@ -377,13 +378,15 @@ class WaveSnapshot(object):
         print 'Reading Grid File !'
         infname=self.datadir+'/'+self.gridfname
         InArr=np.loadtxt(infname)
-        self.xArrIn=InArr[:,0]
-        self.zArrIn=InArr[:,1]
-        self.xmin=self.xArrIn.min()
-        self.xmax=self.xArrIn.max()
-        self.zmin=self.zArrIn.min()
-        self.zmax=self.zArrIn.max()
-        print 'End Reading Grid File !'
+        self.ind = np.lexsort((InArr[:,0],InArr[:,1]))    
+        self.gridArr=InArr[self.ind]
+        xArrIn=InArr[:,0]
+        zArrIn=InArr[:,1]
+        self.xmin=xArrIn.min()
+        self.xmax=xArrIn.max()
+        self.zmin=zArrIn.min()
+        self.zmax=zArrIn.max()
+        # print 'End Reading Grid File !'
         return
     
     def GetElementIndex(self):
@@ -395,44 +398,16 @@ class WaveSnapshot(object):
         XArr=self.XArr.reshape( Ntotal )
         ZArr=self.ZArr.reshape( Ntotal )
         self.index=np.array([],dtype=int)
-        for i in np.arange( Ntotal ):
-            if i%1000==0:
-                print 'Step:', i, 'of', Ntotal
-            x=XArr[i]
-            z=ZArr[i]
-            Logic = (self.xArrIn==x)*(self.zArrIn==z)
-            index=int( np.where( Logic==True)[0][0] )
-            self.index=np.a
-            ppend(self.index, index)
+        Ngrid=self.gridArr.size/2
+        for i in np.arange( Ngrid ):
+            if i%100000==0:
+                print 'Step:', i, 'of', Ngrid
+            xzpoint=self.gridArr[i]
+            remains=np.remainder(xzpoint, 2500)
+            if remains[0]==0 and remains[1]==0:
+                self.index=np.append(self.index, self.ind[i] )
         print 'End getting element indices !'
         return
-    
-    def GetElementIndexMP(self, NLst):
-        """
-        Get the element indices (multiprocessing)
-        """
-        print 'Getting element indices !'
-        Ntotal=(self.Nx+1)*(self.Nz+1)
-        XArr=self.XArr.reshape( Ntotal )
-        ZArr=self.ZArr.reshape( Ntotal )
-        
-        index=np.array([],dtype=int)
-        GETELEMENT = partial(GetElementMP, inWS=self)
-        pool =multiprocessing.Pool(processes=2)
-        pool.map(GETELEMENT, noiseStream, chunksize=2) #make our results with a map call
-        pool.close() #we are not adding any more processes
-        pool.join() #tell it to wait until all threads are done before going on
-        for i in np.arange( Ntotal ):
-            if i%1000==0:
-                print 'Step:', i, 'of', Ntotal
-            x=XArr[i]
-            z=ZArr[i]
-            Logic = (self.xArrIn==x)*(self.zArrIn==z)
-            index=int( np.where( Logic==True)[0][0] )
-            self.index=np.append(self.index, index)
-        print 'End getting element indices !'
-        return
-    
     
     def SaveElementIndex(self, outdir):
         """
@@ -502,11 +477,35 @@ class WaveSnapshot(object):
         return
     
     
-    def PlotSnapshots(self, ds=1000., factor=5., outfname=None):
+    def PlotSnapshots(self, ds=1000., factor=25., xmin=None, xmax=None, zmin=None, zmax=None, outfname=None, zscale=15.):
         """
         Plot snapshots as animation
         """
-        fig = plt.figure(figsize=(16,12))
+        if xmin==None:
+            xmin=self.xmin/ds
+        if xmax==None:
+            xmax=self.xmax/ds
+        if zmin==None:
+            zmin=self.zmin/ds
+        if zmax==None:
+            zmax=self.zmax/ds
+        from matplotlib.patches import Circle, Wedge, Polygon
+        from matplotlib.collections import PatchCollection
+        XLength=xmax-xmin
+        ZLength=zmax-zmin
+        xscale=zscale*(XLength/ZLength)
+        # print xscale, zscale
+        # fig = plt.figure(figsize=(xscale, zscale))
+        fig, ax = plt.subplots(figsize=(xscale, zscale))
+        #################################################
+        ax.add_collection(PatchCollection([Circle(xy=(800, 1300), radius=100)], facecolor='r', edgecolor='r', alpha=0.1))
+        ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
+        ax.plot(1600, 1300 , 'y*', markersize=20)
+        ax.plot(np.array([100., 3100.]), np.array([1000., 1000.]) , 'g-', lw=3)
+        ax.plot(np.array([3100., 3100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        ax.plot(np.array([100., 100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        ax.plot(np.array([100., 3100.]), np.array([1600., 1600.]) , 'g-', lw=3)
+        #################################################
         ims = []
         i=0
         for snap in self.snapshots:
@@ -515,9 +514,13 @@ class WaveSnapshot(object):
             im=plt.imshow(snap, cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
                     vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
             ims.append([im])
-        im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000, blit=True)
-        plt.xlabel('x (km)')
-        plt.ylabel('z (km)')
+        im_ani = animation.ArtistAnimation(fig, ims, interval=200, repeat_delay=3000, blit=True)
+        # plt.plot( 1600, 1300 , 'y*', markersize=30)
+        plt.xlabel('x (km)', fontsize=30)
+        plt.ylabel('z (km)', fontsize=30)
+        plt.axis([xmin, xmax, zmin, zmax])
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
         if outfname!=None:
             im_ani.save(outfname, )
         plt.show()
@@ -534,26 +537,48 @@ class WaveSnapshot(object):
         InArr=np.loadtxt(infname)
         wfmax=max(wfmax, InArr.max() )
         wfmin=min(wfmin, InArr.min() )
-        self.wfmax=max(wfmax, abs(wfmin))
+        self.wfmaxS=max(wfmax, abs(wfmin))
         snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
         self.singleSnap=snap
         return
     
-    def PlotSingleSnap(self, unit='km', ds=1000., factor=1., outfname=None):
+    def GetSingleSnap(self, N):
+        try:
+            index=(np.where(self.Narr==N))[0]
+        except:
+            print 'No snapshot for:',N
+            return
+        wfmax=-999
+        wfmin=999
+        self.singleSnap=self.snapshots[index]
+        wfmax=max(wfmax, self.singleSnap.max() )
+        wfmin=min(wfmin, self.singleSnap.min() )
+        self.wfmaxS=max(wfmax, abs(wfmin))
+        return
+        
+    
+    def PlotSingleSnap(self, unit='km', ds=1000., factor=1., outfname=None, zscale=10):
         """
         Plot single snapshot
         """
-        fig = plt.figure(figsize=(16,12))
-        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
-        plt.plot( 320, 320 , 'y*', markersize=30)
+        XLength=self.xmax-self.xmin
+        ZLength=self.zmax-self.zmin
+        xscale=zscale*(XLength/ZLength)
+        # print xscale, zscale
+        fig = plt.figure(figsize=(xscale, zscale))
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmaxS/factor, vmax = self.wfmaxS/factor)
+        # plt.plot( 320, 320 , 'y*', markersize=30)
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)
-        plt.colorbar()
+        # plt.colorbar()
         plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
         # plt.axis('scaled')
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
         plt.show()
         return im
+    
+    
+    
     
 
