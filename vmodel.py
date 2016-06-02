@@ -7,19 +7,19 @@ import warnings
 class vmodel(object):
     """
     An object to handle input model for SPECFEM2D.
-    --------------------------------------------------------------------------------------------------------------
+    ===========================================================================
     Parameters:
     xmin, xmax, zmin, zmax    - bound of study region
-    Nx, Nz                                - element number in x, z
-                                                ( [number of grid points] = [element number] * [lpd+1] )
-    Vp, Vs, Rho                        - background Vp/Vs/density
+    Nx, Nz                                 - element number in x, z
+                                                    ( [number of grid points] = [element number] * [lpd+1] )
+    Vp, Vs, Rho                         - background Vp/Vs/density
     lpd                                       - Lagrange polynomial degree
     plotflag                                - whether to store numpy arrays for plotting purpose
     
     Notes:
     Nx, Nz is completely different from ni, nj in SW4. In SW4, ni, nj, nk are number of grid points,
     while Nx, Nz here are element numbers, which can be analogically regarded as block numbers.  
-    --------------------------------------------------------------------------------------------------------------
+    ===========================================================================
     """
     def __init__(self, xmin, xmax, Nx, zmin, zmax, Nz, Vp=4000., Vs=3000., Rho=2600., lpd=4, plotflag=True):
         self.xmin=xmin
@@ -96,109 +96,126 @@ class vmodel(object):
     def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va, dv=None):
         """
         Inplement block anomaly in the model for Vs
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
-        Xmin, Xmax, Zmin, Zmax   - defines the bound
+        Xmin, Xmax, Zmin, Zmax    - defines the bound
         va                                           - anomalous velocity
-        dv                                          - velocity anomaly in percentage( default is None, which means use va )
-        -----------------------------------------------------------------------------------------------------
+        dv                                           - velocity anomaly in percentage( default is None, which means use va )
+        =============================================================================
         """
-        Xlogic=(self.XArr>=Xmin)*(self.XArr<=Xmax)
-        Zlogic=(self.ZArr>=Zmin)*(self.ZArr<=Zmax)
-        Logic=Xlogic*Zlogic
+        Xindex=(self.XArr>=Xmin)*(self.XArr<=Xmax)
+        Zindex=(self.ZArr>=Zmin)*(self.ZArr<=Zmax)
+        Index=Xindex*Zindex
         if dv!=None:
-            self.VsArr[Logic]=self.VsArr[Logic]*(1+dv)
+            self.VsArr[Index]=self.VsArr[Index]*(1+dv)
         else:
-            self.VsArr[Logic]=va
+            self.VsArr[Index]=va
         if self.plotflag==True:
-            Xlogic=(self.XArrPlot>=Xmin)*(self.XArrPlot<=Xmax)
-            Zlogic=(self.ZArrPlot>=Zmin)*(self.ZArrPlot<=Zmax)
-            Logic=Xlogic*Zlogic
+            Xindex=(self.XArrPlot>=Xmin)*(self.XArrPlot<=Xmax)
+            Zindex=(self.ZArrPlot>=Zmin)*(self.ZArrPlot<=Zmax)
+            Index=Xindex*Zindex
             if dv!=None:
-                self.VsArrPlot[Logic]=self.VsArrPlot[Logic]*(1+dv)
+                self.VsArrPlot[Index]=self.VsArrPlot[Index]*(1+dv)
             else:
-                self.VsArrPlot[Logic]=va
+                self.VsArrPlot[Index]=va
         return
     
     def CircleHomoAnomaly(self, Xc, Zc, R, va, dv=None):
         """
         Inplement circle anomaly in the model for Vs
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
-        Xc, Zc    - the center of the circle
-        R            - radius
+        Xc, Zc     - center of the circle
+        R             - radius
         va           - anomalous velocity
         dv           - velocity anomaly in percentage( default is None, which means use va )
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        Logic = dArr <= R
+        Index = dArr <= R
         if dv!=None:
-            self.VsArr[Logic]=self.VsArr[Logic]*(1+dv)
+            self.VsArr[Index]=self.VsArr[Index]*(1+dv)
         else:
-            self.VsArr[Logic]=va
+            self.VsArr[Index]=va
         if self.plotflag==True:
             dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
-            Logic = dArr <= R
+            Index = dArr <= R
             if dv!=None:
-                self.VsArrPlot[Logic] = self.VsArrPlot[Logic]*(1+dv)
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
             else:
-                self.VsArrPlot[Logic]=va
+                self.VsArrPlot[Index]=va
         return
     
     def CircleLinearAnomaly(self, Xc, Zc, R, va, dv=None):
         """
         Inplement circle anomaly with linear change towards center in the model for Vs
         Assuming the background Vs is homogeneous
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
-        Xc, Zc    - the center of the circle
-        R            - radius
+        Xc, Zc     - center of the circle
+        R             - radius
         va           - anomalous velocity
         dv           - velocity anomaly in percentage( default is None, which means use va )
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        if dv!=None:
+        if dv==None:
             dva = va - self.Vs
         else:
             dva = self.Vs*dv
-        delD = R - dArr 
-        self.VsArr = 0.5 * (np.sign(delD) + 1) * delD/R * dva + self.VsArr
+        delD = R - dArr
+        IndexIn = (delD >=0)
+        # self.VsArr = 0.5 * (np.sign(delD) + 1) * delD/R * dva + self.VsArr
+        self.VsArr = IndexIn * delD/R * dva + self.VsArr
         if self.plotflag==True:
             dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
             delD = R - dArr
-            self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * delD/R * dva + self.VsArrPlot
+            IndexIn = delD >=0
+            # self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * delD/R * dva + self.VsArrPlot
+            self.VsArrPlot = IndexIn * delD/R * dva + self.VsArrPlot
         return
     
     def CircleCosineAnomaly(self, Xc, Zc, R, va, dv=None):
         """
         Inplement circle anomaly with cosine change towards center in the model for Vs
         Assuming the background Vs is homogeneous
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
-        Xc, Zc     - the center of the circle
+        Xc, Zc     - center of the circle
         R             - radius
-        va            - anomalous velocity
-        dv            - velocity anomaly in percentage( default is None, which means use va )
-        -----------------------------------------------------------------------------------------------------
+        va           - anomalous velocity
+        dv           - velocity anomaly in percentage( default is None, which means use va )
+        =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        if dv!=None:
+        if dv==None:
             dva = va - self.Vs
         else:
             dva = self.Vs*dv
-        delD = R - dArr 
-        self.VsArr = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArr
+        delD = R - dArr
+        IndexIn = (delD >=0)
+        # self.VsArr = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArr
+        self.VsArr = IndexIn * ( 1+np.cos( np.pi* dArr / R ) )/2. * dva + self.VsArr
         if self.plotflag==True:
             dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
             delD = R - dArr
-            self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArrPlot
+            IndexIn = (delD >=0)
+            # self.VsArrPlot = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArrPlot
+            self.VsArrPlot = IndexIn * ( 1+np.cos( np.pi* dArr / R ) )/2. * dva + self.VsArrPlot
         return
     
     def write(self, outfname, dt=None, fc=None, freqfactor=2.5, C=0.35):
         """
         Write vmodel to txt file that can be read by SPECFEM2D
+        Will check stability criteria if dt, fc are specified.
+        =============================================================================
+        Input Parameters:
+        outfname   - output file name
+        dt               - time step 
+        fc                - center frequency
+        freqfactor   - fmin = fc * freqfactor
+        C                - Courant number
+        =============================================================================
         """
         if dt ==None and fc == None:
             warnings.warn('Skip input checker, may cause problem in simulation!', UserWarning, stacklevel=1)
@@ -240,12 +257,12 @@ class vmodel(object):
     
     def plot(self, ds=1000, unit='km', vmin=2.5, vmax=3.5):
         """Plot velocity model
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
         ds                          - grid spacing
         unit                       - unit
         vmin, vmax          - vmin,vmax for colorbar
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         """
         if self.plotflag==False:
             raise ValueError('No plot array!')
@@ -259,7 +276,9 @@ class vmodel(object):
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
             plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap='seismic_r', vmin=vmin, vmax=vmax)
+        ##########################################
         # plt.plot( 320, 320 , 'y*', markersize=30)
+        ##########################################
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)
         plt.colorbar()
@@ -281,14 +300,14 @@ class vmodel(object):
 class InputChecker(object):
     """
     An object to check stability condition given input parameters.
-    -----------------------------------------------------------------------------------------------------
+    =============================================================================
     Parameters:
-    dt                  - time step
-    dx, dz            - grid spacing 
-    fc                   - central frequency
+    dt                   - time step
+    dx, dz            - element spacing 
+    fc                    - central frequency
     lpd                 - Lagrange polynomial degree
     vmin, vmax   - minimum/maximum velocity
-    -----------------------------------------------------------------------------------------------------
+    =============================================================================
     """
     def __init__(self, dt, dx, dz, fc, lpd, vmin, vmax):
         self.dt=dt
@@ -325,33 +344,31 @@ class InputChecker(object):
     def CheckMinLambda(self, freqfactor=2.5):
         """
         Check grid spacing with wavelength minimum wavelength.
-        -----------------------------------------------------------------------------------------------------
+        ==============================================
         Input Parameters:
-        freqfactor - fmax = freqfactor*fc
-        -----------------------------------------------------------------------------------------------------
+        freqfactor       - fmax = freqfactor*fc
+        ==============================================
         """
         lambdamin=self.vmin/self.fc/freqfactor
         dxArr=self.dx*np.diff( (0.5+0.5*(self.knots)) )
         dzArr=self.dz*np.diff( (0.5+0.5*(self.knots)) )
         dsmax=max(dxArr.max(), dzArr.max())
         # dsmax=max(self.dx, self.dz)
+        # Need checking! (in manual: threshold value is around 4.5 points
+        # per wavelength in elastic media and 5.5 in acoustic media), 4.5 grid points OR 4.5 element points
         if dsmax * 4.5 > lambdamin:
             raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' m')
         else:
             print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' m'
-        # if self.dx * 2. > lambdamin or self.dy * 2. > lambdamin:
-        #     raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' km')
-        # else:
-        #     print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' km'
         return
     
     def CheckCFLCondition(self, C=0.35):
         """
         Check Courant-Frieddrichs-Lewy stability condition
-        -----------------------------------------------------------------------------------------------------
+        ===========================================
         Input Parameters:
         C - Courant number (default = 0.35, normally 0.3~0.4)
-        -----------------------------------------------------------------------------------------------------
+        ===========================================
         """
         dxArr=self.dx*np.diff( (0.5+0.5*(self.knots)) )
         dzArr=self.dz*np.diff( (0.5+0.5*(self.knots)) )
@@ -360,17 +377,17 @@ class InputChecker(object):
         if self.dt > dtCFL:
             raise ValueError('Time step violates Courant-Frieddrichs-Lewy Condition: ', dt, dtCFL)
         else:
-            print 'Time Step: ',self.dt,' s Required Time Step: ', dtCFL, 's '
+            print 'Time Step: ',self.dt,' s Required Time Step: ', dtCFL, 's'
         return
     
     def Check(self, freqfactor=2.5, C=0.35):
         """
         Check minimum wavelenght and Courant conditions
         """
-        print '-------------------- Checking stability conditions --------------------'
+        print '=========== Checking stability conditions ==========='
         self.CheckMinLambda(freqfactor=freqfactor)
         self.CheckCFLCondition(C=C)
-        print '-------------------- Stability conditions checked  ---------------------'
+        print '===========  Stability conditions checked  ==========='
         return
 
 

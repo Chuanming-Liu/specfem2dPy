@@ -322,34 +322,34 @@ class Field2d(object):
         # plt.show()
         return
     
-    
+
 class WaveSnapshot(object):
     """
     An object to handle output wavefield from SPECFEM2D.
-    --------------------------------------------------------------------------------------------------------------
+    ===========================================================================
     Parameters:
     datadir             - data directory
-    pfx                   - input file prefix
+    pfx                    - input file prefix
     sfx                    - input file suffix
     gridfname        - grid point file name
-    snapshots         - snapshot list
+    snapshots        - snapshot list
     Narr                 - snapshot number array
     dx, dz               - (half) element size
     Nx, Nz             - (doubled) element number in x, z 
                                 note that some data points locate at the mid point between two element point 
     XArr, ZArr      - arrays for element location
     lpd                   - Lagrange polynomial degree
-    --------------------------------------------------------------------------------------------------------------
+    ===========================================================================
     """
     def __init__(self, datadir, xmax, Nx, zmax, Nz, nt, xmin=0, zmin=0, ni=5, dn=10,
         pfx='wavefield', sfx='_01_000.txt', gridfname='wavefield_grid_for_dumps_000.txt', lpd=4):
         """ 
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        xmin, zmax     - bound of study region
-        nt                     - number of total time step
-        ni                     - initial time step number
-        dn                    - time step interval
+        xmin, xmax, zmin, zmax       - bound of study region
+        nt                                           - number of total time step
+        ni                                           - initial time step number
+        dn                                          - time step interval
         -----------------------------------------------------------------------------------------------------
         """
         self.datadir=datadir
@@ -386,7 +386,7 @@ class WaveSnapshot(object):
         self.xmax=xArrIn.max()
         self.zmin=zArrIn.min()
         self.zmax=zArrIn.max()
-        # print 'End Reading Grid File !'
+        print 'End Reading Grid File !'
         return
     
     def GetElementIndex(self):
@@ -398,12 +398,16 @@ class WaveSnapshot(object):
         XArr=self.XArr.reshape( Ntotal )
         ZArr=self.ZArr.reshape( Ntotal )
         self.index=np.array([],dtype=int)
-        Ngrid=self.gridArr.size/2
+        try:
+            Ngrid=self.gridArr.size/2
+        except AttributeError:
+            self.ReadGridFile()
+            Ngrid=self.gridArr.size/2
         for i in np.arange( Ngrid ):
             if i%100000==0:
                 print 'Step:', i, 'of', Ngrid
             xzpoint=self.gridArr[i]
-            remains=np.remainder(xzpoint, 2500)
+            remains=np.remainder(xzpoint, self.dx)
             if remains[0]==0 and remains[1]==0:
                 self.index=np.append(self.index, self.ind[i] )
         print 'End getting element indices !'
@@ -430,7 +434,6 @@ class WaveSnapshot(object):
         Read snapshots
         """
         wfmax=-999
-        wfmin=999
         for N in self.Narr:
             infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N)
             print 'Reading ',infname,' snapshot!' 
@@ -439,9 +442,8 @@ class WaveSnapshot(object):
                 InArr=InArr[:,1]
             except:
                 InArr=InArr
-            wfmax=max(wfmax, InArr.max() )
-            wfmin=min(wfmin, InArr.min() )
-            self.wfmax=max(wfmax, abs(wfmin))
+            wfmax=max(InArr.max(), abs(InArr.min()) )
+            self.wfmaxglobe=max(wfmax, self.wfmaxglobe )
             snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
             self.snapshots.append( snap[::-1, :] )
         return
@@ -449,6 +451,11 @@ class WaveSnapshot(object):
     def writeASDF(self, outfname):
         """
         Write wavefield snapshots to ASDF Dataset
+        Output in ASDF auxiliary dataset
+        data            - wavefield numpy array of shape (self.Nz+1, self.Nx+1)
+        data_type   - Snapshot
+        path            - wfN, N=self.Narr[i]
+        parameters - header dictionary( xmin, xmax, zmin, zmax, wfmaxglobe, wfmax )
         """
         dbase=pyasdf.ASDFDataSet(outfname)
         for i in np.arange(self.Narr.size):
@@ -456,7 +463,7 @@ class WaveSnapshot(object):
             path='wf'+str(int(self.Narr[i]))
             # print path
             wfmax=max(snap.max(), abs(snap.min()))
-            header={'xmin': self.xmin, 'xmax': self.xmax, 'zmin': self.zmin, 'zmax': self.zmax, 'wfmaxglobe': self.wfmax, 'wfmax': wfmax}
+            header={'xmin': self.xmin, 'xmax': self.xmax, 'zmin': self.zmin, 'zmax': self.zmax, 'wfmaxglobe': self.wfmaxglobe, 'wfmax': wfmax}
             dbase.add_auxiliary_data(data=snap, data_type='Snapshot', path=path, parameters=header)
         return
             
@@ -469,7 +476,7 @@ class WaveSnapshot(object):
             path='wf'+str(int(self.Narr[i]))
             snap=dbase.auxiliary_data.Snapshot[path].data.value
             self.snapshots.append(snap)
-        self.wfmax=dbase.auxiliary_data.Snapshot[path].parameters['wfmaxglobe']
+        self.wfmaxglobe=dbase.auxiliary_data.Snapshot[path].parameters['wfmaxglobe']
         self.xmin=dbase.auxiliary_data.Snapshot[path].parameters['xmin']
         self.xmax=dbase.auxiliary_data.Snapshot[path].parameters['xmax']
         self.zmin=dbase.auxiliary_data.Snapshot[path].parameters['zmin']
@@ -477,10 +484,17 @@ class WaveSnapshot(object):
         return
     
     
-    def PlotSnapshots(self, ds=1000., factor=25., xmin=None, xmax=None, zmin=None, zmax=None, outfname=None, zscale=15.):
+    def PlotSnapshots(self, factor=25., xmin=None, xmax=None, zmin=None, zmax=None, outfname=None, zsize=15.):
         """
         Plot snapshots as animation
+        -----------------------------------------------------------------------------------------------------
+        Input Parameters:
+        xmin, xmax, zmin, zmax       - bound of study region
+        outfname                               - output video file name
+        zsize                                      - figure size in z direction
+        -----------------------------------------------------------------------------------------------------
         """
+        ds = 1000. # 1000 meters
         if xmin==None:
             xmin=self.xmin/ds
         if xmax==None:
@@ -493,10 +507,10 @@ class WaveSnapshot(object):
         from matplotlib.collections import PatchCollection
         XLength=xmax-xmin
         ZLength=zmax-zmin
-        xscale=zscale*(XLength/ZLength)
+        xsize=zsize*(XLength/ZLength)
         # print xscale, zscale
         # fig = plt.figure(figsize=(xscale, zscale))
-        fig, ax = plt.subplots(figsize=(xscale, zscale))
+        fig, ax = plt.subplots(figsize=(xsize, zsize))
         #################################################
         ax.add_collection(PatchCollection([Circle(xy=(800, 1300), radius=100)], facecolor='r', edgecolor='r', alpha=0.1))
         ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
@@ -512,10 +526,9 @@ class WaveSnapshot(object):
             i=i+1
             print 'Plotting ',i,' snapshot!' 
             im=plt.imshow(snap, cmap='seismic_r', extent=[self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds],
-                    vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
+                    vmin = -self.wfmaxglobe/factor, vmax = self.wfmaxglobe/factor)
             ims.append([im])
         im_ani = animation.ArtistAnimation(fig, ims, interval=200, repeat_delay=3000, blit=True)
-        # plt.plot( 1600, 1300 , 'y*', markersize=30)
         plt.xlabel('x (km)', fontsize=30)
         plt.ylabel('z (km)', fontsize=30)
         plt.axis([xmin, xmax, zmin, zmax])
@@ -528,46 +541,41 @@ class WaveSnapshot(object):
     
     def ReadSingleSnap(self, N):
         """
-        Read single snapshot
+        Read single snapshot for time step N
         """
-        wfmax=-999
-        wfmin=999
         infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N)
         print 'Reading ',infname,' snapshot!' 
         InArr=np.loadtxt(infname)
-        wfmax=max(wfmax, InArr.max() )
-        wfmin=min(wfmin, InArr.min() )
-        self.wfmaxS=max(wfmax, abs(wfmin))
+        self.wfmax=max(InArr.max(), abs(InArr.min()))
         snap=np.take(InArr, self.index).reshape(self.Nz+1, self.Nx+1)
         self.singleSnap=snap
         return
     
     def GetSingleSnap(self, N):
+        """
+        Get single snapshot for time step N from snapshots list
+        """
         try:
             index=(np.where(self.Narr==N))[0]
         except:
             print 'No snapshot for:',N
             return
-        wfmax=-999
-        wfmin=999
         self.singleSnap=self.snapshots[index]
-        wfmax=max(wfmax, self.singleSnap.max() )
-        wfmin=min(wfmin, self.singleSnap.min() )
-        self.wfmaxS=max(wfmax, abs(wfmin))
+        self.wfmax=max( self.singleSnap.max(), abs( self.singleSnap.min() ) )
         return
         
-    
-    def PlotSingleSnap(self, unit='km', ds=1000., factor=1., outfname=None, zscale=10):
+    def PlotSingleSnap(self, unit='km',  factor=1., outfname=None, zsize=10):
         """
         Plot single snapshot
         """
+        ds=1000. # ds =1000 meters
         XLength=self.xmax-self.xmin
         ZLength=self.zmax-self.zmin
-        xscale=zscale*(XLength/ZLength)
+        xsize=zsize*(XLength/ZLength)
         # print xscale, zscale
-        fig = plt.figure(figsize=(xscale, zscale))
-        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r', vmin = -self.wfmaxS/factor, vmax = self.wfmaxS/factor)
-        # plt.plot( 320, 320 , 'y*', markersize=30)
+        fig = plt.figure(figsize=(xsize, zsize))
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r',
+                        vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)
         # plt.colorbar()

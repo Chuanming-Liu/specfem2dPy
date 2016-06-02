@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
-import numpy.ma as ma
 import matplotlib.animation as animation
 import obspy
 import os
@@ -9,13 +8,13 @@ import os
 class StaInfo(object):
     """
     An object contains a station information several methods for station related analysis.
-    -----------------------------------------------------------------------------------------------------
+    =============================================================================
     General Parameters:
     stacode       - station name
     network      - network
     chan           - channels for analysis
     x, z             - position for station (in meters)
-    -----------------------------------------------------------------------------------------------------
+    =============================================================================
     """
     def __init__(self, stacode=None, network='ME2D', x=None, z=None):
 
@@ -50,14 +49,14 @@ class StaLst(object):
 
     def __len__(self):
         """
-        Return the number of Traces in the StaLst object.
+        Return the number of StaInfos in the StaLst object.
         """
         return len(self.stations)
 
     def __getitem__(self, index):
         """
-        __getitem__ method of obspy.Stream objects.
-        :return: Trace objects
+        __getitem__ method of StaLst objects.
+        :return: StaInfo objects
         """
         if isinstance(index, slice):
             return self.__class__(stations=self.stations.__getitem__(index))
@@ -88,18 +87,6 @@ class StaLst(object):
             network=lines[1]
             x=float(lines[2])
             z=float(lines[3])
-            # if len(lines)==5:
-            #     try:
-            #         ccflag=int(lines[3])
-            #         network=lines[4]
-            #     except ValueError:
-            #         ccflag=int(lines[4])
-            #         network=lines[3]
-            # if len(lines)==4:
-            #     try:
-            #         ccflag=int(lines[3])
-            #     except ValueError:
-            #         network=lines[3]
             netsta=network+'.'+stacode
             if Sta.__contains__(netsta):
                 index=Sta.index(netsta)
@@ -115,7 +102,7 @@ class StaLst(object):
     
     def WriteStaList(self, stafile):
         """
-        Read Sation List from a txt file
+        Write Sation List to a txt file
         stacode network x z
         """
         f = open(stafile, 'w')
@@ -126,12 +113,24 @@ class StaLst(object):
         return
     
     def AddSingle(self, x, z, stacode=None, network='MEM2D'):
+        """
+        Add single StaInfo object to the StaLst
+        """
         if stacode==None:
             stacode=str(int(x))+'S'+str(int(z))
         self.append(StaInfo (stacode=stacode, network=network, x=x, z=z ))
         return
     
     def HomoStaLst(self, xmin, xmax, dx, zmin, zmax, dz, network='MEM2D'):
+        """
+        Generate a StaLst with equal grid spacing
+        ==============================================
+        Input Parameters:
+        xmin, xmax, zmin, zmax  - range of the stations
+        dx, dz                                - spacial interval for x/z
+        network                            - network name 
+        ==============================================
+        """
         Nx = int((xmax-xmin)/dx)+1
         Nz = int((zmax-zmin)/dz)+1
         for i in np.arange(Nx):
@@ -143,6 +142,16 @@ class StaLst(object):
         return
     
     def downsample(self, xmin, dx , zmin, dz):
+        """
+        Downsample station list
+        ==============================================
+        Input Parameters:
+        xmin, zmin  - origin of the station list 
+        dx, dz           - new station interval
+        Output:
+        a new StaLst object with downsampled station list 
+        ==============================================
+        """
         nSLst=StaLst()
         for sta in self.stations:
             if (sta.x-xmin)%dx !=0 or  (sta.z-zmin)%dz !=0:
@@ -153,6 +162,13 @@ class StaLst(object):
     def GetInventory(self, outfname=None, source='CUCIEI'):
         """
         Get obspy inventory, used for ASDF dataset
+        ========================================================
+        Input Parameters:
+        outfname  - output stationxml file name (default = None, no output)
+        source       - source string
+        Output:
+        obspy.core.inventory.inventory.Inventory object, stationxml file(optional)
+        ========================================================
         """
         stations=[]
         total_number_of_channels=1
@@ -176,10 +192,13 @@ class StaLst(object):
     def SelectStations(self, x=None, z=None, x0=None, z0=None, dist=None, outflag=True, xmin=-1e10, xmax=1e10, zmin=-1e10, zmax=1e10):
         """
         Select a subset of stations from original station list
-        -----------------------------------------------------------------------------------------------------
+        =============================================================================
         Input Parameters:
-        x, z        - if specified, only append stations with x ==
-        -----------------------------------------------------------------------------------------------------
+        x, z                                    - if specified, ONLY  append stations with sta.x == x , sta.z==z
+        x0, z0, dist                        - if specified, ONLY  append stations in/out the circle (x0, z0, radius=dist)
+        outflag                              - True (out the circle) False (in the circle)
+        xmin, xmax, zmin, zmax  - x/z range of stations
+        =============================================================================
         """
         if x==None and z == None and ( x0==None or z0==None or dist==None):
             raise ValueError("At least one of x or y need to be specified!")
@@ -194,12 +213,20 @@ class StaLst(object):
             if x!=None:
                 if sta.x==x and sta.z>zmin and sta.z<zmax:
                     newSLst.append(sta)
+                    continue
             if z!=None:
                 if sta.z==z and sta.x>xmin and sta.x<xmax:
                     newSLst.append(sta)
+                    continue
+            if sta.x<xmin or sta.x > xmax or sta.z < zmin or sta.z > zmax:
+                continue
+            newSLst.append(sta)
         return newSLst
     
     def GetStation(self, datadir):
+        """
+        Get a subset of stations from original station list according to existence of seismogram file
+        """
         newSLst=StaLst()
         for sta in self.stations:
             txtfname = datadir+'/'+sta.network+'.'+sta.stacode+'.'+'BXY.semd'
@@ -207,7 +234,3 @@ class StaLst(object):
                 continue
             newSLst.append(sta)
         return newSLst
-    
-    
-    
-
