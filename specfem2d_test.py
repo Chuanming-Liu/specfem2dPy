@@ -6,13 +6,14 @@ from obspy.geodetics import kilometer2degrees
 
 
 infname = './50km/Tgr_10.0.txt'
+# infname = '../SW4Py/ak135_VF_0km/Tph_10.0.txt'
 # infname = './syndata_dir_000_DD/Tgr_10.0.txt'
 inArr=np.loadtxt(infname)
 fig1, ax1 = plt.subplots()
 T=inArr[:,2]
 DistArr=inArr[:,3]
-T=T[DistArr<400]
-DistArr=DistArr[DistArr<400]
+# T=T[DistArr<400]
+# DistArr=DistArr[DistArr<400]
 ind=np.argsort(DistArr)
 DistArr=DistArr[ind]
 T=T[ind]
