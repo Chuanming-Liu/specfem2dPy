@@ -3,19 +3,19 @@ import stations
 import numpy as np
 import vmodel
 
-### Input Checker
-# InCheck=vmodel.InputChecker(dt=0.05,
-#         dx=5., dz=5., fc=0.1, lpd=4, vmin=2.5, vmax=3.0);
-# InCheck.Check();
+Dx=1000.*100.
+Dz=1000.*1000.
 
 ### Generate Station List
-SLst=stations.StaLst();
-SLst.HomoStaLst(xmin=0, xmax=1000000, zmin=0, zmax=1000000, dx=10000, dz=10000);
-# SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
-SLst.WriteStaList('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
+# SLst=stations.StaLst();
+# SLst.HomoStaLst(xmin=0, xmax=1000000, zmin=0, zmax=1000000, dx=10000, dz=10000);
+# # SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
+# SLst.WriteStaList('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
 # 
 # ### Velocity Model
-Vm=vmodel.vmodel(xmin=0, xmax=1000000, Nx=200, zmin=0, zmax=1000000, Nz=200, Vp=4800.);
+Vm=vmodel.vmodel(xmin=0, xmax=3000000+2*Dx, Nx=640, zmin=0, zmax=600000+2*Dz, Nz=520, Vs=3231.62)
+Vm.ASDFmodel('../CPSPy/eigendisp_ringbasin.h5')
+Vm.plot()
 # # Vm.CircleGradualAnomaly(Xc=640000, Zc=640000, R=60000, Va=2500);
 # 
 # Vm.read('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/proc000000_rho_vp_vs.dat')

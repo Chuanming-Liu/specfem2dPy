@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.mlab import griddata
 import numpy.ma as ma
 import warnings
+import pyasdf
 
 class vmodel(object):
     """
@@ -131,6 +132,7 @@ class vmodel(object):
         dv           - velocity anomaly in percentage( default is None, which means use va )
         =============================================================================
         """
+        print 'Adding homo circle anomaly Xc=', Xc,' Zc=', Zc, ' R=',R
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
         Index = dArr <= R
         if dv!=None:
@@ -204,6 +206,70 @@ class vmodel(object):
             self.VsArrPlot = IndexIn * ( 1+np.cos( np.pi* dArr / R ) )/2. * dva + self.VsArrPlot
         return
     
+    def RingHomoAnomaly(self, Xc, Zc, Rmax, Rmin, va, dv=None):
+        """
+        Inplement ring anomaly in the model for Vs
+        =============================================================================
+        Input Parameters:
+        Xc, Zc           - center of the circle
+        Rmax, Rmin - radius max/min
+        va                 - anomalous velocity
+        dv                 - velocity anomaly in percentage( default is None, which means use va )
+        =============================================================================
+        """
+        if Rmin < self.dx:
+            self.CircleHomoAnomaly(Xc=Xc, Zc=Zc, R=Rmax, va=va, dv=dv)
+            return
+        print 'Adding homo ring anomaly Xc=', Xc,' Zc=', Zc, ' Rmax=',Rmax, ' Rmin=', Rmin
+        dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
+        Index = (dArr <= Rmax) * (dArr > Rmin) 
+        if dv!=None:
+            self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else:
+            self.VsArr[Index]=va
+        if self.plotflag==True:
+            dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
+            Index = (dArr <= Rmax) * (dArr > Rmin) 
+            if dv!=None:
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else:
+                self.VsArrPlot[Index]=va
+        return
+    
+    
+    def ASDFmodel(self, infname, per=10., phgr=1, verbose=True):
+        """
+        Read ASDF model
+        =============================================================================
+        Input Parameters:
+        infname        - input file name
+        per                - period
+        phgr              - use phase(1) or group(2) velocity
+        =============================================================================
+        """
+        dbase = pyasdf.ASDFDataSet(infname)
+        if verbose==True:
+            print dbase.auxiliary_data.Disp
+        perArr = dbase.auxiliary_data.Disp.VP000.data.value[0, :]
+        vArr=dbase.auxiliary_data.Disp.VP000.data.value[phgr, :]
+        if not np.any(perArr==per):
+            raise ValueError('Period ', per,' sec not in the theoretical dispersion curve !' )
+        Vs0 = vArr[perArr==per]* 1000.
+        self.VsArr[:] = Vs0 
+        if self.plotflag == True:
+            self.VsArrPlot[:]=Vs0 
+        for auxid in dbase.auxiliary_data.Disp.list()[1:]:
+            perArr = dbase.auxiliary_data.Disp[auxid].data.value[0, :]
+            vArr=dbase.auxiliary_data.Disp[auxid].data.value[phgr, :]
+            Rmax=dbase.auxiliary_data.Disp[auxid].parameters['Rmax']
+            Rmin=dbase.auxiliary_data.Disp[auxid].parameters['Rmin']
+            x=dbase.auxiliary_data.Disp[auxid].parameters['x']
+            y=dbase.auxiliary_data.Disp[auxid].parameters['y']
+            Vs = vArr[perArr==per] * 1000.
+            self.RingHomoAnomaly(Xc=x, Zc=y, Rmax=Rmax, Rmin=Rmin, va=Vs)
+        return
+            
+    
     def write(self, outfname, dt=None, fc=None, freqfactor=2.5, C=0.35):
         """
         Write vmodel to txt file that can be read by SPECFEM2D
@@ -264,6 +330,7 @@ class vmodel(object):
         vmin, vmax          - vmin,vmax for colorbar
         =============================================================================
         """
+        
         if self.plotflag==False:
             raise ValueError('No plot array!')
         plt.figure(figsize=(16,13))
