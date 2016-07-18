@@ -11,11 +11,11 @@ class vmodel(object):
     ===========================================================================
     Parameters:
     xmin, xmax, zmin, zmax    - bound of study region
-    Nx, Nz                                 - element number in x, z
+    Nx, Nz                                - element number in x, z
                                                     ( [number of grid points] = [element number] * [lpd+1] )
     Vp, Vs, Rho                         - background Vp/Vs/density
-    lpd                                       - Lagrange polynomial degree
-    plotflag                                - whether to store numpy arrays for plotting purpose
+    lpd                                      - Lagrange polynomial degree
+    plotflag                               - whether to store numpy arrays for plotting purpose
     
     Notes:
     Nx, Nz is completely different from ni, nj in SW4. In SW4, ni, nj, nk are number of grid points,
@@ -93,6 +93,16 @@ class vmodel(object):
         self.zmin=self.ZArr.min()
         self.zmax=self.ZArr.max()
         return
+    
+    def setbackground(self, vs=None, vp=None, rho=None):
+        if vs !=None:
+            self.VsArr[:]=vs
+        if vp !=None:
+            self.VpArr[:]=vp
+        if rho !=None:
+            self.RhoArr[:]=rho
+        return
+        
     
     def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va, dv=None):
         """
@@ -177,7 +187,7 @@ class vmodel(object):
             self.VsArrPlot = IndexIn * delD/R * dva + self.VsArrPlot
         return
     
-    def CircleCosineAnomaly(self, Xc, Zc, R, va, dv=None):
+    def CircleCosineAnomaly(self, Xc, Zc, R, va=None, dv=None):
         """
         Inplement circle anomaly with cosine change towards center in the model for Vs
         Assuming the background Vs is homogeneous
@@ -190,7 +200,7 @@ class vmodel(object):
         =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        if dv==None:
+        if va !=None:
             dva = va - self.Vs
         else:
             dva = self.Vs*dv
@@ -426,7 +436,7 @@ class InputChecker(object):
         if dsmax * 4.5 > lambdamin:
             raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' m')
         else:
-            print 'Grid spacing: ', str(dsmax),'km for ',lambdamin, ' m'
+            print 'Grid spacing:', str(dsmax),'m for',lambdamin, 'm'
         return
     
     def CheckCFLCondition(self, C=0.35):

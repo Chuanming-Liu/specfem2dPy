@@ -13,6 +13,7 @@ import matplotlib
 import pyasdf
 import multiprocessing
 from functools import partial
+from lasif import colors
 
 X_diff_weight_2 = np.array([[1., 0., -1.]])/2.
 Y_diff_weight_2 = X_diff_weight_2.T
@@ -29,7 +30,48 @@ X_diff2_weight_6 = np.array([[1./90., 	-3./20.,  3./2.,  -49./18., 3./2., -3./20
 Y_diff2_weight_6 = X_diff2_weight_6.T
 
 
+
+# By Jake VanderPlas
+# License: BSD-style
+
+
+def discrete_cmap(N, base_cmap=None):
+    """Create an N-bin discrete colormap from the specified input map"""
+
+    # Note that if base_cmap is a string or None, you can simply do
+    #    return plt.cm.get_cmap(base_cmap, N)
+    # The following works for string, None, or a colormap instance:
+
+    base = plt.cm.get_cmap(base_cmap)
+    color_list = base(np.linspace(0, 1, N))
+    cmap_name = base.name + str(N)
+    return base.from_list(cmap_name, color_list, N)
+
+
+if __name__ == '__main__':
+    N = 5
+
+    x = np.random.randn(40)
+    y = np.random.randn(40)
+    c = np.random.randint(N, size=40)
+
+    # Edit: don't use the default ('jet') because it makes @mwaskom mad...
+    plt.scatter(x, y, c=c, s=50, cmap=discrete_cmap(N, 'cubehelix'))
+    plt.colorbar(ticks=range(N))
+    plt.clim(-0.5, N - 0.5)
+    plt.show()
+
+
 class Field2d(object):
+    """
+    An object to analyze 2D Cartesian field data
+    ===========================================================================
+    Parameters:
+    dx, dy               - grid size
+    Nx, Ny             - grid number in x, z 
+    XArr, ZArr      - arrays for grid location
+    ===========================================================================
+    """
     def __init__(self, Nx, Ny, dx, dy):
         self.Nx=int(Nx)+1
         self.Ny=int(Ny)+1
@@ -43,22 +85,39 @@ class Field2d(object):
         return
     
     def LoadFile(self, fname):
+        """Load field file
+        """
         try:
             Inarray=np.loadtxt(fname)
+            with open(fname) as f:
+                inline = f.readline()
+                if inline.split()[0] =='#':
+                    enxstr = inline.split()[1]
+                    enystr = inline.split()[2]
+                    if enxstr.split('=')[0] =='enx':
+                        self.enx = float(enxstr.split('=')[1])
+                    if enystr.split('=')[0] =='eny':
+                        self.eny = float(enystr.split('=')[1])
         except:
             Inarray=np.load(fname)
-        self.XarrIn=Inarray[:,0]/1000.
-        self.YarrIn=Inarray[:,1]/1000.
+        # self.XarrIn=Inarray[:,0]/1000.
+        # self.YarrIn=Inarray[:,1]/1000.
+        self.XarrIn=Inarray[:,0]
+        self.YarrIn=Inarray[:,1]
         self.ZarrIn=Inarray[:,2]
         return
     
     def LoadField(self, inField):
+        """Load field data from an input object
+        """
         self.XarrIn=inField.Xarr
         self.YarrIn=inField.Yarr
         self.ZarrIn=inField.Zarr
         return
     
     def SaveFile(self, fname, fmt='npy'):
+        """Save field file
+        """
         OutArr=np.append(self.Xarr, self.Yarr)
         OutArr=np.append(OutArr, self.Zarr)
         OutArr=OutArr.reshape(3, self.Nx*self.Ny)
@@ -75,6 +134,8 @@ class Field2d(object):
         pass
     
     def Interp(self, kind='cubic', copy=True, bounds_error=False, fill_value=np.nan):
+        """Interpolation
+        """
         if self.Xarr.size == self.XarrIn.size:
             if (np.abs(self.Xarr-self.XarrIn)).sum() < 0.01 and (np.abs(self.Yarr-self.YarrIn)).sum() < 0.01:
                 print 'No need to interpolate!'
@@ -86,7 +147,10 @@ class Field2d(object):
         self.Zarr=self.Zarr.reshape(self.Nx*self.Ny)
         return
     
-    def natgridInterp(self, interp='linear', copy=True, bounds_error=False, fill_value=np.nan):
+    def natgridInterp(self, interp='linear'):
+        """Interpolates from a nonuniformly spaced grid to some other grid.
+             interp = 'nn' for natural neighbor, or 'linear' for linear interpolation.
+        """
         if self.Xarr.size == self.XarrIn.size:
             if (np.abs(self.Xarr.reshape(self.Nx*self.Ny)-self.XarrIn)).sum() < 0.01\
                 and (np.abs(self.Yarr.reshape(self.Nx*self.Ny)-self.YarrIn)).sum() < 0.01:
@@ -100,6 +164,8 @@ class Field2d(object):
         return
     
     def PlotInField(self):
+        """Plot input array data
+        """
         fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k')
         xi, yi = np.meshgrid(self.x, self.y)
         zi = griddata(self.XarrIn, self.YarrIn, self.ZarrIn, xi, yi )
@@ -112,7 +178,9 @@ class Field2d(object):
         plt.show()
         return
         
-    def PlotField(self):
+    def PlotField(self, contourflag=True):
+        """Plot data with contour
+        """
         fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k')
         # xi, yi = np.meshgrid(self.x, self.y)
         # zi = griddata(self.XarrIn, self.YarrIn, self.ZarrIn, xi, yi )
@@ -125,7 +193,9 @@ class Field2d(object):
         plt.show()
         return
     
-    def CuttingEdges(self, nx, ny, fieldtype='TravelT'):
+    def CuttingEdges(self, nx, ny):
+        """Cut edge
+        """
         self.Nx=self.Nx-2*nx
         self.Ny=self.Ny-2*ny
         self.x=np.arange(self.Nx)*self.dx
@@ -135,6 +205,8 @@ class Field2d(object):
         return
         
     def fftDiff(self, m, n):
+        """Compute derivative with FFT
+        """
         try:
             h = np.fft.fft2(ma.getdata(self.Zarr))
         except:
@@ -157,6 +229,8 @@ class Field2d(object):
         return out_diff
     
     def fftDiff2(self, m, n):
+        """Compute derivative with FFT, extend grid number to be power of 2
+        """
         Nx=1<<(self.Nx-1).bit_length()
         Ny=1<<(self.Ny-1).bit_length()
         # h = np.fft.fft2(self.Zarr, s=[Nx, Ny] )
@@ -172,6 +246,8 @@ class Field2d(object):
     
     
     def Gradient(self, edge_order=1, method='default', order=2):
+        """Compute gradient of the field
+        """
         if method=='default':
             self.grad=np.gradient( ma.getdata(self.Zarr), self.dx, self.dy, edge_order=edge_order)
         elif method=='freq':
@@ -193,9 +269,74 @@ class Field2d(object):
             self.grad=[]
             self.grad.append(diff_y)
             self.grad.append(diff_x)
+        radian= np.arctan2(self.grad[0], self.grad[1])
+        self.proAngle = radian*180./np.pi
+        self.proAngle[radian<0.] = self.proAngle[radian<0.] + 360.
         return
     
+    def PlotPropagation(self):
+        """Plot propagation direction
+        """
+        plt.subplots()
+        normArr = np.sqrt ( self.grad[0] ** 2 + self.grad[1] ** 2)
+        Q = plt.quiver(self.Xarr, self.Yarr, self.grad[1]/normArr, self.grad[0]/normArr, scale =50, width=0.002)
+        plt.axis('equal')
+        plt.xlabel('km')
+        plt.ylabel('km')
+        plt.show()
+        
+    def GetDeflection(self):
+        enx = self.enx
+        eny = self.eny
+        straightX = (self.Xarr-enx) / np.sqrt ( (self.Xarr - enx)**2 + (self.Yarr - eny)**2 )
+        straightY = (self.Yarr-eny) / np.sqrt ( (self.Xarr - enx)**2 + (self.Yarr - eny)**2 )
+        radian= np.arctan2(straightY, straightX)
+        self.straightAngle =  radian*180./np.pi
+        self.straightAngle[radian<0.] = self.straightAngle[radian<0.] + 360.
+        self.delAngle = self.proAngle - self.straightAngle
+        self.delAngle[self.delAngle>180] = self.delAngle[self.delAngle>180] -360.
+        self.delAngle[self.delAngle<-180] = self.delAngle[self.delAngle<-180] + 360.
+        return
+    
+    def PlotDeflection(self, vmin=-4, vmax=4):
+
+        # XLength=self.Xarr.max() - self.Xarr.min()
+        # YLength=self.Yarr.max() - self.Yarr.min()
+        # ysize=20
+        # xsize=ysize*(XLength/YLength)
+        # print xsize, ysize
+        fig, ax = plt.subplots()
+        incmap=colors.get_colormap('tomo_80_perc_linear_lightness')
+        dcmap =discrete_cmap(int(vmax-vmin)+1, incmap)
+        # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap=dcmap, shading='gouraud', vmin=vmin, vmax= vmax)
+        plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap=dcmap, shading='gouraud', vmin=vmin, vmax= vmax)
+        #################################################
+        from matplotlib.patches import Circle, Wedge, Polygon
+        from matplotlib.collections import PatchCollection
+        # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap='seismic_r', shading='gouraud', vmin=vmin, vmax= vmax)
+        ax.add_collection(PatchCollection([Circle(xy=(570, 570), radius=100)], facecolor='w', edgecolor='k', alpha=0.1))
+        # ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
+        ax.plot(500, 500 , 'y*', markersize=10)
+        # ax.plot(np.array([100., 3100.]), np.array([1000., 1000.]) , 'g-', lw=3)
+        # ax.plot(np.array([3100., 3100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 3100.]), np.array([1600., 1600.]) , 'g-', lw=3)
+        #################################################
+        # plt.subplots()
+        # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap='seismic_r', shading='gouraud', vmin=vmin, vmax= vmax)
+        plt.axis('equal')
+        plt.axis([self.x[1], self.x[-2], self.y[1], self.y[-2]])
+        plt.colorbar()
+        plt.xlabel('km')
+        plt.ylabel('km')
+        plt.title('source (500, 500) circle (570, 570) D=99 km')
+        plt.show()
+        return
+        
+    
     def GetApparentV(self):
+        """Get the apparent velocity from gradient
+        """
         self.AppV = np.sqrt ( self.grad[0] ** 2 + self.grad[1] ** 2)
         self.AppV[ np.where(self.AppV==0) ] = -1.
         self.AppV=1./self.AppV
@@ -214,11 +355,16 @@ class Field2d(object):
         plt.axis([self.x[1], self.x[-2], self.y[1], self.y[-2]])
         plt.xlabel('km')
         plt.ylabel('km')
-        # plt.show()
+        plt.show()
         return
     
-    def GetDoT(self, enx, eny):
+    def GetDoT(self, enx=None, eny=None):
+        if enx==None or eny ==None:
+            enx = self.enx
+            eny = self.eny
         Darr=np.sqrt( (self.Xarr-enx)**2 + (self.Yarr-eny)**2)
+        self.Zarr[self.Zarr == 0.0] = 1.
+        Darr[self.Zarr == 0.0] = 1.
         self.DoT = Darr/ma.getdata(self.Zarr)
         return
     
@@ -234,7 +380,7 @@ class Field2d(object):
         plt.axis([self.x[1], self.x[-2], self.y[1], self.y[-2]])
         plt.xlabel('km')
         plt.ylabel('km')
-        # plt.show()
+        plt.show()
         return
     
     def LaplacianEqualXY(self):
@@ -403,6 +549,7 @@ class WaveSnapshot(object):
         except AttributeError:
             self.ReadGridFile()
             Ngrid=self.gridArr.size/2
+        # Nstep = int (Ngrid /10)
         for i in np.arange( Ngrid ):
             if i%100000==0:
                 print 'Step:', i, 'of', Ngrid
@@ -433,7 +580,7 @@ class WaveSnapshot(object):
         """
         Read snapshots
         """
-        wfmax=-999
+        self.wfmaxglobe=-999
         for N in self.Narr:
             infname=(self.datadir+'/'+self.pfx+'%07d'+self.sfx) % (N)
             print 'Reading ',infname,' snapshot!' 
@@ -489,7 +636,7 @@ class WaveSnapshot(object):
         Plot snapshots as animation
         -----------------------------------------------------------------------------------------------------
         Input Parameters:
-        xmin, xmax, zmin, zmax       - bound of study region
+        xmin, xmax, zmin, zmax     - bound of study region
         outfname                               - output video file name
         zsize                                      - figure size in z direction
         -----------------------------------------------------------------------------------------------------
@@ -503,23 +650,23 @@ class WaveSnapshot(object):
             zmin=self.zmin/ds
         if zmax==None:
             zmax=self.zmax/ds
-        from matplotlib.patches import Circle, Wedge, Polygon
-        from matplotlib.collections import PatchCollection
+        # from matplotlib.patches import Circle, Wedge, Polygon
+        # from matplotlib.collections import PatchCollection
         XLength=xmax-xmin
         ZLength=zmax-zmin
         xsize=zsize*(XLength/ZLength)
         # print xscale, zscale
         # fig = plt.figure(figsize=(xscale, zscale))
         fig, ax = plt.subplots(figsize=(xsize, zsize))
-        #################################################
-        ax.add_collection(PatchCollection([Circle(xy=(800, 1300), radius=100)], facecolor='r', edgecolor='r', alpha=0.1))
-        ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
-        ax.plot(1600, 1300 , 'y*', markersize=20)
-        ax.plot(np.array([100., 3100.]), np.array([1000., 1000.]) , 'g-', lw=3)
-        ax.plot(np.array([3100., 3100.]), np.array([1000., 1600.]) , 'g-', lw=3)
-        ax.plot(np.array([100., 100.]), np.array([1000., 1600.]) , 'g-', lw=3)
-        ax.plot(np.array([100., 3100.]), np.array([1600., 1600.]) , 'g-', lw=3)
-        #################################################
+        # #################################################
+        # ax.add_collection(PatchCollection([Circle(xy=(800, 1300), radius=100)], facecolor='r', edgecolor='r', alpha=0.1))
+        # ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
+        # ax.plot(1600, 1300 , 'y*', markersize=20)
+        # ax.plot(np.array([100., 3100.]), np.array([1000., 1000.]) , 'g-', lw=3)
+        # ax.plot(np.array([3100., 3100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 3100.]), np.array([1600., 1600.]) , 'g-', lw=3)
+        # #################################################
         ims = []
         i=0
         for snap in self.snapshots:

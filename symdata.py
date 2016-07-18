@@ -27,7 +27,7 @@ class ftanParam(object):
               arr1_1[6,:] -  signal/noise ratio, Db
               arr1_1[7,:] -  maximum half width, s
               arr1_1[8,:] -  amplitudes
-    arr2_1   - final results with jump detection
+    arr2_1    - final results with jump detection
     nfout2_1 - output number of frequencies for arr2, (integer*4)
               Description: real*8 arr2(7,n), n >= nfin)
               If nfout2 == 0, no final result.
@@ -41,7 +41,7 @@ class ftanParam(object):
               arr2_1[7,:] -  amplitudes
     tamp_1    -  time to the beginning of ampo table, s (real*8)
     nrow_1    -  number of rows in array ampo, (integer*4)
-    ncol_1      -  number of columns in array ampo, (integer*4)
+    ncol_1     -  number of columns in array ampo, (integer*4)
     amp_1     -  Ftan amplitude array, Db, (real*8)
     ierr_1      - completion status, =0 - O.K.,           (integer*4)
                                  =1 - some problems occures
@@ -311,19 +311,19 @@ class specfem2dtrace(obspy.core.trace.Trace):
         """ (Automatic Frequency-Time ANalysis) aftan analysis:
         ===================================================================================
         Input Parameters:
-        pmf                - flag for Phase-Matched-Filtered output (default: True)
+        pmf               - flag for Phase-Matched-Filtered output (default: True)
         piover4          - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
-        vmin              - minimal group velocity, km/s
-        vmax             - maximal group velocity, km/s
+        vmin             - minimal group velocity, km/s
+        vmax            - maximal group velocity, km/s
         tmin              - minimal period, s
-        tmax              - maximal period, s
+        tmax             - maximal period, s
         tresh             - treshold for jump detection, usualy = 10, need modifications
         ffact              - factor to automatic filter parameter, usualy =1
         taperl            - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
         snr                - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
         fmatch          - factor to length of phase matching window
         fname           - SAC file name
-        phvelname   - predicted phase velocity file name
+        phvelname    - predicted phase velocity file name
         predV           - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
         
         Output:
@@ -548,19 +548,19 @@ class InputFtanParam(object):
     A subclass to store input parameters for aftan analysis and SNR Analysis
     ===================================================================================
     Parameters:
-    pmf             - flag for Phase-Matched-Filtered output (default: Fasle)
+    pmf            - flag for Phase-Matched-Filtered output (default: False)
     piover4       - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
-    vmin           - minimal group velocity, km/s
+    vmin          - minimal group velocity, km/s
     vmax          - maximal group velocity, km/s
     tmin           - minimal period, s
     tmax          - maximal period, s
     tresh          - treshold for jump detection, usualy = 10, need modifications
-    ffact            - factor to automatic filter parameter, usualy =1
-    taperl        - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
+    ffact           - factor to automatic filter parameter, usualy =1
+    taperl         - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
     snr             - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
-    fmatch      - factor to length of phase matching window
+    fmatch       - factor to length of phase matching window
     fhlen          - half length of Gaussian width
-    dosnrflag  - whether to do SNR analysis or not
+    dosnrflag    - whether to do SNR analysis or not
     predV        - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
     ===================================================================================
     """
@@ -588,7 +588,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         =============================================================
         Input Parameters:
         stafile        - station list file name
-        datadir      - data directory
+        datadir       - data directory
         Output:
         self.waveforms
         =============================================================
@@ -638,8 +638,8 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         Input Parameters:
         compindex   - component index in waveforms path (default = 0)
         tb                 -  begin time (default = 0)
-        outdir          - directory for output disp txt files (default = None, no txt output)
-        inftan          - input aftan parameters
+        outdir           - directory for output disp txt files (default = None, no txt output)
+        inftan           - input aftan parameters
         vph              - predicted phase velocity
         Tmin            - minimum period
         Nt                - number of periods
@@ -714,12 +714,11 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         Code need checking
         ==================================================================
         Input Parameters:
-        outfname    - output ASDF file name
+        outfname     - output ASDF file name
         stafile          -  station list file name
         sacflag         - select sac data or not
-        compindex  - component index in waveforms path (default = np.array([0]))
-        data_type       - dispersion data type (default = DISPbasic1, basic aftan results)
-        
+        compindex   - component index in waveforms path (default = np.array([0]))
+        data_type     - dispersion data type (default = DISPbasic1, basic aftan results)
         Output:
         Ndbase
         ==================================================================
@@ -762,7 +761,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         """ Interpolate dispersion curve for a given period array.
         ==================================================================
         Input Parameters:
-        data_type       - dispersion data type (default = DISPbasic1, basic aftan results)
+        data_type        - dispersion data type (default = DISPbasic1, basic aftan results)
         pers                - period array
         
         Output:
@@ -866,7 +865,10 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
                 if not os.path.isdir(outdir):
                     os.makedirs(outdir)
                 txtfname=outdir+'/'+tempdict[fieldtype]+'_'+str(per)+'.txt'
-                np.savetxt(txtfname, FieldArr, fmt='%g')
+                evlo = self.events.events[0].origins[0].longitude
+                evla = self.events.events[0].origins[0].latitude
+                header = 'enx='+str(evlo)+' eny='+str(evla)
+                np.savetxt( txtfname, FieldArr, fmt='%g', header=header )
             self.add_auxiliary_data(data=FieldArr, data_type='Field'+data_type, path=tempdict[fieldtype]+str(int(per)), parameters=outindex)
         return
     
