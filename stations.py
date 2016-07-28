@@ -10,10 +10,10 @@ class StaInfo(object):
     An object contains a station information several methods for station related analysis.
     =============================================================================
     General Parameters:
-    stacode       - station name
+    stacode      - station name
     network      - network
-    chan           - channels for analysis
-    x, z             - position for station (in meters)
+    chan         - channels for analysis
+    x, z         - position for station (in meters)
     =============================================================================
     """
     def __init__(self, stacode=None, network='ME2D', x=None, z=None):
@@ -127,8 +127,8 @@ class StaLst(object):
         ==============================================
         Input Parameters:
         xmin, xmax, zmin, zmax  - range of the stations
-        dx, dz                                - spacial interval for x/z
-        network                            - network name 
+        dx, dz                  - spacial interval for x/z
+        network                 - network name 
         ==============================================
         """
         Nx = int((xmax-xmin)/dx)+1
@@ -144,13 +144,13 @@ class StaLst(object):
     def downsample(self, xmin, dx , zmin, dz):
         """
         Downsample station list
-        ==============================================
+        ================================================================
         Input Parameters:
         xmin, zmin  - origin of the station list 
-        dx, dz           - new station interval
+        dx, dz      - new station interval
         Output:
         a new StaLst object with downsampled station list 
-        ==============================================
+        ================================================================
         """
         nSLst=StaLst()
         for sta in self.stations:
@@ -162,13 +162,13 @@ class StaLst(object):
     def GetInventory(self, outfname=None, source='CUCIEI'):
         """
         Get obspy inventory, used for ASDF dataset
-        ========================================================
+        ==========================================================================
         Input Parameters:
         outfname  - output stationxml file name (default = None, no output)
-        source       - source string
+        source    - source string
         Output:
         obspy.core.inventory.inventory.Inventory object, stationxml file(optional)
-        ========================================================
+        ==========================================================================
         """
         stations=[]
         total_number_of_channels=1
@@ -192,13 +192,13 @@ class StaLst(object):
     def SelectStations(self, x=None, z=None, x0=None, z0=None, dist=None, outflag=True, xmin=-1e10, xmax=1e10, zmin=-1e10, zmax=1e10):
         """
         Select a subset of stations from original station list
-        =============================================================================
+        =================================================================================================================
         Input Parameters:
-        x, z                                    - if specified, ONLY  append stations with sta.x == x , sta.z==z
-        x0, z0, dist                        - if specified, ONLY  append stations in/out the circle (x0, z0, radius=dist)
-        outflag                              - True (out the circle) False (in the circle)
+        x, z                    - if specified, ONLY  append stations with sta.x == x , sta.z==z
+        x0, z0, dist            - if specified, ONLY  append stations in/out the circle (x0, z0, radius=dist)
+        outflag                 - True (out the circle) False (in the circle)
         xmin, xmax, zmin, zmax  - x/z range of stations
-        =============================================================================
+        =================================================================================================================
         """
         if x==None and z == None and ( x0==None or z0==None or dist==None):
             raise ValueError("At least one of x or y need to be specified!")

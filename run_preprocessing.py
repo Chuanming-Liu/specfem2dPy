@@ -11,12 +11,13 @@ import vmodel
 
 ### Velocity Model
 Vm=vmodel.vmodel(xmin=0, xmax=2000000, Nx=400, zmin=0, zmax=2000000, Nz=400, Vs=3000.)
-Vm.read('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat_backup')
+# Vm.read('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat_backup')
+Vm.read('/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_1200/DATA/proc000000_rho_vp_vs.dat_backup')
 Vm.setbackground(vs=3000.)
-Vm.CircleCosineAnomaly( Xc=570000, Zc=570000, R=100000, dv = -0.1)
+Vm.CircleCosineAnomaly( Xc=1200000, Zc=1200000, R=100000, dv = -0.1)
 Vm.plot()
-Vm.write('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat', dt=0.05, fc=0.1)
-
+# Vm.write('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat', dt=0.05, fc=0.1)
+Vm.write('/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_1200/DATA/proc000000_rho_vp_vs.dat', dt=0.05, fc=0.1)
 ### Velocity Model
 # Vm=vmodel.vmodel(xmin=0, xmax=3000000+2*Dx, Nx=640, zmin=0, zmax=600000+2*Dz, Nz=520, Vs=3023.22)
 # Vm.read('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_0.1_20/DATA/proc000000_rho_vp_vs.dat')

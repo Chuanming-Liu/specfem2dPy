@@ -15,8 +15,8 @@ class ftanParam(object):
     """ An object to handle ftan output parameters
     ===========================================================================
     Basic FTAN parameters:
-    nfout1_1 - output number of frequencies for arr1, (integer*4)
-    arr1_1    - preliminary results.
+    nfout1_1    - output number of frequencies for arr1, (integer*4)
+    arr1_1      - preliminary results.
               Description: real*8 arr1(8,n), n >= nfin)
               arr1_1[0,:] -  central periods, s
               arr1_1[1,:] -  observed periods, s
@@ -27,8 +27,8 @@ class ftanParam(object):
               arr1_1[6,:] -  signal/noise ratio, Db
               arr1_1[7,:] -  maximum half width, s
               arr1_1[8,:] -  amplitudes
-    arr2_1    - final results with jump detection
-    nfout2_1 - output number of frequencies for arr2, (integer*4)
+    arr2_1      - final results with jump detection
+    nfout2_1    - output number of frequencies for arr2, (integer*4)
               Description: real*8 arr2(7,n), n >= nfin)
               If nfout2 == 0, no final result.
               arr2_1[0,:] -  central periods, s
@@ -39,11 +39,11 @@ class ftanParam(object):
               arr2_1[5,:] -  signal/noise ratio, Db
               arr2_1[6,:] -  maximum half width, s
               arr2_1[7,:] -  amplitudes
-    tamp_1    -  time to the beginning of ampo table, s (real*8)
-    nrow_1    -  number of rows in array ampo, (integer*4)
-    ncol_1     -  number of columns in array ampo, (integer*4)
-    amp_1     -  Ftan amplitude array, Db, (real*8)
-    ierr_1      - completion status, =0 - O.K.,           (integer*4)
+    tamp_1  -  time to the beginning of ampo table, s (real*8)
+    nrow_1  -  number of rows in array ampo, (integer*4)
+    ncol_1  -  number of columns in array ampo, (integer*4)
+    amp_1   -  Ftan amplitude array, Db, (real*8)
+    ierr_1  - completion status, =0 - O.K.,           (integer*4)
                                  =1 - some problems occures
                                  =2 - no final results
     ==========================================================
@@ -60,8 +60,8 @@ class ftanParam(object):
              arr1_2[6,:] -  signal/noise ratio, Db (real*8)
              arr1_2[7,:] -  maximum half width, s (real*8)
              arr1_2[8,:] -  amplitudes 
-    arr2_2     - final results with jump detection
-    nfout2_2 - output number of frequencies for arr2, (integer*4)
+    arr2_2      - final results with jump detection
+    nfout2_2    - output number of frequencies for arr2, (integer*4)
              Description: real*8 arr2(7,n), n >= nfin)
              If nfout2 == 0, no final results.
              arr2_2[0,:] -  central periods, s (real*8)
@@ -74,9 +74,9 @@ class ftanParam(object):
              arr2_2[7,:] -  amplitudes
     tamp_2      -  time to the beginning of ampo table, s (real*8)
     nrow_2      -  number of rows in array ampo, (integer*4)
-    ncol_2        -  number of columns in array ampo, (integer*4)
+    ncol_2      -  number of columns in array ampo, (integer*4)
     amp_2       -  Ftan amplitude array, Db, (real*8)
-    ierr_2         - completion status, =0 - O.K.,           (integer*4)
+    ierr_2      - completion status, =0 - O.K.,           (integer*4)
                                 =1 - some problems occures
                                 =2 - no final results
     ===========================================================================
@@ -309,26 +309,25 @@ class specfem2dtrace(obspy.core.trace.Trace):
         tmax=30.0, tresh=20.0, ffact=1.0, taperl=1.0, snr=0.2, fmatch=1.0, phvelname='', predV=np.array([]) ):
 
         """ (Automatic Frequency-Time ANalysis) aftan analysis:
-        ===================================================================================
+        =========================================================================================================================
         Input Parameters:
-        pmf               - flag for Phase-Matched-Filtered output (default: True)
-        piover4          - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
-        vmin             - minimal group velocity, km/s
-        vmax            - maximal group velocity, km/s
-        tmin              - minimal period, s
-        tmax             - maximal period, s
-        tresh             - treshold for jump detection, usualy = 10, need modifications
-        ffact              - factor to automatic filter parameter, usualy =1
-        taperl            - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
-        snr                - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
-        fmatch          - factor to length of phase matching window
-        fname           - SAC file name
-        phvelname    - predicted phase velocity file name
-        predV           - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
+        pmf        - flag for Phase-Matched-Filtered output (default: True)
+        piover4    - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
+        vmin       - minimal group velocity, km/s
+        vmax       - maximal group velocity, km/s
+        tmin       - minimal period, s
+        tmax       - maximal period, s
+        tresh      - treshold for jump detection, usualy = 10, need modifications
+        ffact      - factor to automatic filter parameter, usualy =1
+        taperl     - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
+        snr        - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
+        fmatch     - factor to length of phase matching window
+        phvelname  - predicted phase velocity file name
+        predV      - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
         
         Output:
         self.ftanparam, a object of ftanParam class, to store output aftan results
-        ===================================================================================
+        =========================================================================================================================
         References:
         Levshin, A. L., and M. H. Ritzwoller. Automated detection, extraction, and measurement of regional surface waves.
              Monitoring the Comprehensive Nuclear-Test-Ban Treaty: Surface Waves. Birkh?user Basel, 2001. 1531-1545.
@@ -546,23 +545,23 @@ class specfem2dtrace(obspy.core.trace.Trace):
 class InputFtanParam(object): 
     """
     A subclass to store input parameters for aftan analysis and SNR Analysis
-    ===================================================================================
+    =====================================================================================================
     Parameters:
-    pmf            - flag for Phase-Matched-Filtered output (default: False)
-    piover4       - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
-    vmin          - minimal group velocity, km/s
-    vmax          - maximal group velocity, km/s
-    tmin           - minimal period, s
-    tmax          - maximal period, s
-    tresh          - treshold for jump detection, usualy = 10, need modifications
-    ffact           - factor to automatic filter parameter, usualy =1
-    taperl         - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
-    snr             - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
-    fmatch       - factor to length of phase matching window
-    fhlen          - half length of Gaussian width
-    dosnrflag    - whether to do SNR analysis or not
-    predV        - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
-    ===================================================================================
+    pmf         - flag for Phase-Matched-Filtered output (default: False)
+    piover4     - phase shift = pi/4*piover4, for cross-correlation piover4 should be -1.0
+    vmin        - minimal group velocity, km/s
+    vmax        - maximal group velocity, km/s
+    tmin        - minimal period, s
+    tmax        - maximal period, s
+    tresh       - treshold for jump detection, usualy = 10, need modifications
+    ffact       - factor to automatic filter parameter, usualy =1
+    taperl      - factor for the left end seismogram tapering, taper = taperl*tmax,    (real*8)
+    snr         - phase match filter parameter, spectra ratio to determine cutting point for phase matched filter
+    fmatch      - factor to length of phase matching window
+    fhlen       - half length of Gaussian width
+    dosnrflag   - whether to do SNR analysis or not
+    predV       - predicted phase velocity curve, period = predV[:, 0],  Vph = predV[:, 1]
+    =====================================================================================================
     """
     def __init__(self):
         self.pmf=False
@@ -587,8 +586,8 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         """ Read txt seismogram files into ASDF dataset according to given station list
         =============================================================
         Input Parameters:
-        stafile        - station list file name
-        datadir       - data directory
+        stafile     - station list file name
+        datadir     - data directory
         Output:
         self.waveforms
         =============================================================
@@ -637,17 +636,17 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         ===================================================================================
         Input Parameters:
         compindex   - component index in waveforms path (default = 0)
-        tb                 -  begin time (default = 0)
-        outdir           - directory for output disp txt files (default = None, no txt output)
-        inftan           - input aftan parameters
-        vph              - predicted phase velocity
-        Tmin            - minimum period
-        Nt                - number of periods
-        dT                - period interval
-        basic1           - save basic aftan results or not
-        basic2           - save basic aftan results(with jump correction) or not
-        pmf1             - save pmf aftan results or not
-        pmf2             - save pmf aftan results(with jump correction) or not
+        tb          - begin time (default = 0)
+        outdir      - directory for output disp txt files (default = None, no txt output)
+        inftan      - input aftan parameters
+        vph         - predicted phase velocity
+        Tmin        - minimum period
+        Nt          - number of periods
+        dT          - period interval
+        basic1      - save basic aftan results or not
+        basic2      - save basic aftan results(with jump correction) or not
+        pmf1        - save pmf aftan results or not
+        pmf2        - save pmf aftan results(with jump correction) or not
         
         Output:
         self.auxiliary_data.DISPbasic1, self.auxiliary_data.DISPbasic2,
@@ -712,16 +711,16 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
     def SelectData(self, outfname, stafile, sacflag=True, compindex=np.array([0]), data_type='DISPbasic1' ):
         """ Select data from ASDF Dataset
         Code need checking
-        ==================================================================
+        ====================================================================================
         Input Parameters:
-        outfname     - output ASDF file name
-        stafile          -  station list file name
-        sacflag         - select sac data or not
+        outfname    - output ASDF file name
+        stafile     -  station list file name
+        sacflag     - select sac data or not
         compindex   - component index in waveforms path (default = np.array([0]))
-        data_type     - dispersion data type (default = DISPbasic1, basic aftan results)
+        data_type   - dispersion data type (default = DISPbasic1, basic aftan results)
         Output:
         Ndbase
-        ==================================================================
+        ====================================================================================
         """
         SLst = stations.StaLst()
         SLst.ReadStaList(stafile=stafile)
@@ -759,15 +758,15 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
     
     def InterpDisp(self, data_type='DISPbasic1', pers=np.array([10., 15., 20., 25.]), verbose=True):
         """ Interpolate dispersion curve for a given period array.
-        ==================================================================
+        ====================================================================================
         Input Parameters:
-        data_type        - dispersion data type (default = DISPbasic1, basic aftan results)
-        pers                - period array
+        data_type       - dispersion data type (default = DISPbasic1, basic aftan results)
+        pers            - period array
         
         Output:
         self.auxiliary_data.DISPbasic1interp, self.auxiliary_data.DISPbasic2interp,
         self.auxiliary_data.DISPpmf1interp, self.auxiliary_data.DISPpmf2interp
-        ==================================================================
+        ====================================================================================
         """
         staidLst=self.auxiliary_data[data_type].list()
         for staid in staidLst:
@@ -796,17 +795,17 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
     
     def GetField(self, data_type='DISPbasic1', fieldtype='Vgr', pers=np.array([10.]), outdir=None, distflag=True, verbose=False ):
         """ Get the field data
-        ==================================================================
+        ====================================================================================
         Input Parameters:
         data_type       - dispersion data type (default = DISPbasic1, basic aftan results)
-        fieldtype         - field data type( Vgr, Vph amp)
-        pers                - period array
-        outdir             - directory for txt output ( default is None )
-        distflag           - whether to output distance or not
+        fieldtype       - field data type( Vgr, Vph amp)
+        pers            - period array
+        outdir          - directory for txt output ( default is None )
+        distflag        - whether to output distance or not
         Output:
         self.auxiliary_data.FieldDISPbasic1interp, self.auxiliary_data.FieldDISPbasic2interp,
         self.auxiliary_data.FieldDISPpmf1interp, self.auxiliary_data.FieldDISPpmf2interp
-        ==================================================================
+        ====================================================================================
         """
         print 'Getting field data!'
         data_type=data_type+'interp'

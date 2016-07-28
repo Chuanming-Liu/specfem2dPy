@@ -7,8 +7,9 @@ dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/specfem2d_working_di
 # dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/LFMembrane_SH_0.1_20/specfem2d_mp.h5')
 # dbase.readtxt('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/OUTPUT_FILES/STATIONS',
 #         datadir='/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/OUTPUT_FILES')
-dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DATA/OUTPUT_FILES/STATIONS',
-        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DATA/OUTPUT_FILES')
+
+dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DATA/STATIONS',
+        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/OUTPUT_FILES')
 dbase.AddEvent(x=500., z=500.)
 inftan=symdata.InputFtanParam()
 inftan.ffact=5.
@@ -21,10 +22,10 @@ try:
 except:
     pass
 # 
-dbase.aftanMP(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DATA/DISP', inftan=inftan, basic2=True,
-            pmf1=True, pmf2=True, tb=-11.9563813705)
-# dbase.aftan(inftan=inftan, basic2=True,
+# dbase.aftanMP(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DISP', inftan=inftan, basic2=True,
 #             pmf1=True, pmf2=True, tb=-11.9563813705)
+dbase.aftan(inftan=inftan, basic2=True,
+            pmf1=True, pmf2=True, tb=-11.9563813705)
 # dbase.aftan(tb=-11.9563813705, outdir='/lustre/janus_scratch/life9360/LFMembrane_SH_0.1_20/DISP', inftan=inftan, basic2=True,
 #             pmf1=True, pmf2=True)
 

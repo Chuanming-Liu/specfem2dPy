@@ -8,19 +8,18 @@ import pyasdf
 class vmodel(object):
     """
     An object to handle input model for SPECFEM2D.
-    ===========================================================================
+    =======================================================================================================
     Parameters:
-    xmin, xmax, zmin, zmax    - bound of study region
-    Nx, Nz                                - element number in x, z
-                                                    ( [number of grid points] = [element number] * [lpd+1] )
-    Vp, Vs, Rho                         - background Vp/Vs/density
-    lpd                                      - Lagrange polynomial degree
-    plotflag                               - whether to store numpy arrays for plotting purpose
+    xmin, xmax, zmin, zmax - bound of study region
+    Nx, Nz                 - element number in x, z ([number of grid points]=[element number]*[lpd+1])
+    Vp, Vs, Rho            - background Vp/Vs/density
+    lpd                    - Lagrange polynomial degree
+    plotflag               - whether to store numpy arrays for plotting purpose
     
     Notes:
     Nx, Nz is completely different from ni, nj in SW4. In SW4, ni, nj, nk are number of grid points,
     while Nx, Nz here are element numbers, which can be analogically regarded as block numbers.  
-    ===========================================================================
+    =======================================================================================================
     """
     def __init__(self, xmin, xmax, Nx, zmin, zmax, Nz, Vp=4000., Vs=3000., Rho=2600., lpd=4, plotflag=True):
         self.xmin=xmin
@@ -103,16 +102,19 @@ class vmodel(object):
             self.RhoArr[:]=rho
         return
         
+    def name(self, ):
+        pass
+    
     
     def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va, dv=None):
         """
         Inplement block anomaly in the model for Vs
-        =============================================================================
+        ============================================================================================
         Input Parameters:
-        Xmin, Xmax, Zmin, Zmax    - defines the bound
-        va                                           - anomalous velocity
-        dv                                           - velocity anomaly in percentage( default is None, which means use va )
-        =============================================================================
+        Xmin, Xmax, Zmin, Zmax - defines the bound
+        va                     - anomalous velocity
+        dv                     - velocity anomaly in percentage(default is None, which means use va)
+        ============================================================================================
         """
         Xindex=(self.XArr>=Xmin)*(self.XArr<=Xmax)
         Zindex=(self.ZArr>=Zmin)*(self.ZArr<=Zmax)
@@ -136,10 +138,10 @@ class vmodel(object):
         Inplement circle anomaly in the model for Vs
         =============================================================================
         Input Parameters:
-        Xc, Zc     - center of the circle
-        R             - radius
-        va           - anomalous velocity
-        dv           - velocity anomaly in percentage( default is None, which means use va )
+        Xc, Zc  - center of the circle
+        R       - radius
+        va      - anomalous velocity
+        dv      - velocity anomaly in percentage(default is None, which means use va)
         =============================================================================
         """
         print 'Adding homo circle anomaly Xc=', Xc,' Zc=', Zc, ' R=',R
@@ -164,10 +166,10 @@ class vmodel(object):
         Assuming the background Vs is homogeneous
         =============================================================================
         Input Parameters:
-        Xc, Zc     - center of the circle
-        R             - radius
-        va           - anomalous velocity
-        dv           - velocity anomaly in percentage( default is None, which means use va )
+        Xc, Zc  - center of the circle
+        R       - radius
+        va      - anomalous velocity
+        dv      - velocity anomaly in percentage(default is None, which means use va)
         =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
@@ -193,10 +195,10 @@ class vmodel(object):
         Assuming the background Vs is homogeneous
         =============================================================================
         Input Parameters:
-        Xc, Zc     - center of the circle
-        R             - radius
-        va           - anomalous velocity
-        dv           - velocity anomaly in percentage( default is None, which means use va )
+        Xc, Zc  - center of the circle
+        R       - radius
+        va      - anomalous velocity
+        dv      - velocity anomaly in percentage(default is None, which means use va)
         =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
@@ -219,13 +221,14 @@ class vmodel(object):
     def RingHomoAnomaly(self, Xc, Zc, Rmax, Rmin, va, dv=None):
         """
         Inplement ring anomaly in the model for Vs
-        =============================================================================
+        ================================================================================
         Input Parameters:
-        Xc, Zc           - center of the circle
+        Xc, Zc     - center of the circle
         Rmax, Rmin - radius max/min
-        va                 - anomalous velocity
-        dv                 - velocity anomaly in percentage( default is None, which means use va )
-        =============================================================================
+        R          - radius
+        va         - anomalous velocity
+        dv         - velocity anomaly in percentage(default is None, which means use va)
+        ================================================================================
         """
         if Rmin < self.dx:
             self.CircleHomoAnomaly(Xc=Xc, Zc=Zc, R=Rmax, va=va, dv=dv)
@@ -252,9 +255,9 @@ class vmodel(object):
         Read ASDF model
         =============================================================================
         Input Parameters:
-        infname        - input file name
-        per                - period
-        phgr              - use phase(1) or group(2) velocity
+        infname   - input file name
+        per       - period
+        phgr      - use phase(1) or group(2) velocity
         =============================================================================
         """
         dbase = pyasdf.ASDFDataSet(infname)
@@ -287,10 +290,10 @@ class vmodel(object):
         =============================================================================
         Input Parameters:
         outfname   - output file name
-        dt               - time step 
-        fc                - center frequency
-        freqfactor   - fmin = fc * freqfactor
-        C                - Courant number
+        dt         - time step 
+        fc         - center frequency
+        freqfactor - fmin = fc * freqfactor
+        C          - Courant number
         =============================================================================
         """
         if dt ==None and fc == None:
@@ -335,9 +338,9 @@ class vmodel(object):
         """Plot velocity model
         =============================================================================
         Input Parameters:
-        ds                          - grid spacing
-        unit                       - unit
-        vmin, vmax          - vmin,vmax for colorbar
+        ds              - grid spacing
+        unit            - unit
+        vmin, vmax      - vmin,vmax for colorbar
         =============================================================================
         """
         
@@ -379,10 +382,10 @@ class InputChecker(object):
     An object to check stability condition given input parameters.
     =============================================================================
     Parameters:
-    dt                   - time step
-    dx, dz            - element spacing 
-    fc                    - central frequency
-    lpd                 - Lagrange polynomial degree
+    dt           - time step
+    dx, dz       - element spacing 
+    fc           - central frequency
+    lpd          - Lagrange polynomial degree
     vmin, vmax   - minimum/maximum velocity
     =============================================================================
     """
@@ -442,10 +445,10 @@ class InputChecker(object):
     def CheckCFLCondition(self, C=0.35):
         """
         Check Courant-Frieddrichs-Lewy stability condition
-        ===========================================
+        ====================================================
         Input Parameters:
         C - Courant number (default = 0.35, normally 0.3~0.4)
-        ===========================================
+        ====================================================
         """
         dxArr=self.dx*np.diff( (0.5+0.5*(self.knots)) )
         dzArr=self.dz*np.diff( (0.5+0.5*(self.knots)) )
