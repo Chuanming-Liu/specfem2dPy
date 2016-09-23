@@ -228,7 +228,7 @@ class Field2d(object):
         """Compute gradient of the field
         """
         if method=='default':
-            self.grad=np.gradient( ma.getdata(self.Zarr), self.dx, self.dy, edge_order=edge_order)
+            self.grad=np.gradient( ma.getdata(self.Zarr), self.dy, self.dx, edge_order=edge_order)
         elif method=='freq':
             diff_x=self.fftDiff(m=1, n=0)
             diff_y=self.fftDiff(m=0, n=1)
