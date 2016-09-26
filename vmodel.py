@@ -4,6 +4,12 @@ from matplotlib.mlab import griddata
 import numpy.ma as ma
 import warnings
 import pyasdf
+from pyproj import Geod, Proj
+import obspy
+from mpl_toolkits.basemap import Basemap
+import colormaps
+geodist = Geod(ellps='WGS84')
+geoproj = Proj(proj='utm',zone=10,ellps='WGS84')
 
 class vmodel(object):
     """
@@ -55,7 +61,7 @@ class vmodel(object):
         self.VsArr=np.ones( [( (lpd+1) * Nz )*( (lpd+1) * Nx )] )*Vs
         self.RhoArr=np.ones( [( (lpd+1) * Nz )*( (lpd+1) * Nx )] )*Rho
         self.plotflag=plotflag
-        if plotflag==True:
+        if plotflag:
         	A=np.ones([lpd+1, Nx])
         	A=self.dx*(0.5+0.5*(self.knots*A.T))
         	B=np.ones([lpd+1, Nx])
@@ -102,8 +108,6 @@ class vmodel(object):
             self.RhoArr[:]=rho
         return
         
-    def name(self, ):
-        pass
     
     
     def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va, dv=None):
@@ -249,6 +253,40 @@ class vmodel(object):
                 self.VsArrPlot[Index]=va
         return
     
+    def readPhv(self, x0, z0, infname, lon0=None, lat0=None, dx=0.5):
+        inArr=np.loadtxt(infname)
+        lons=inArr[:,0]; lats=inArr[:,1]; phvArr=inArr[:,2]*1000.
+        lon0=lons.min(); lat0=lats.min(); lon1=lons.max(); lat1=lats.max()
+        del_lons=lons-lon0; del_lats=lats-lat0; maxdlon=del_lons.max(); maxdlat=del_lats.max()
+        # maxdistNS=obspy.geodetics.gps2dist_azimuth(lat0, lon0, lat0+maxdlat, lon0) # distance is in m
+        # maxdistEW=obspy.geodetics.gps2dist_azimuth(lat0, lon0, lat0, lon0+maxdlon) # distance is in m
+        # maxdist_y=maxdistNS/1000.; maxdist_x=maxdistEW/1000.
+        m = Basemap(projection='cea',llcrnrlat=lat0,urcrnrlat=lat1, llcrnrlon=lon0,urcrnrlon=lon1,resolution='c')
+        xins, zins = m(lons, lats)
+        if xins.max()>self.xmax-x0 or zins.max()>self.zmax-z0:
+            raise ValueError('Input phase velocity map is too large!')
+        Numb=int(lons.size)
+        radius, az, baz=obspy.geodetics.gps2dist_azimuth(0, 0, dx, 0)
+        for i in xrange(Numb):
+            print i
+            x=xins[i]; z=zins[i]; lon=lons[i]; lat=lats[i]; va=phvArr[i]
+            # xc=x0+x; zc=z0+z
+            # self.CircleHomoAnomaly(Xc=xc, Zc=zc, R=radius, va=va)
+            xmin=x0+x-radius; xmax=x0+x+radius; zmin=z0+z-radius; zmax=z0+z+radius
+            self.BlockHomoAnomaly(Xmin=xmin, Xmax=xmax, Zmin=zmin, Zmax=zmax, va=va)
+        return
+    
+    def smooth(self, sigma):
+        v_filtered=self.VsArr
+        for iteration in xrange(int(sigma)):
+            for i in np.arange(1,self.lat.size+1):
+                for j in np.arange(1,self.lon.size+1):
+                    v_filtered[i,j]=(self.cushion_vArr[i,j]+self.cushion_vArr[i+1,j]+self.cushion_vArr[i-1,j]+self.cushion_vArr[i,j+1]+self.cushion_vArr[i,j-1])/5.0
+        self.cushion_vArr=v_filtered
+        self._change_v()
+        return
+        
+    
     
     def ASDFmodel(self, infname, per=10., phgr=1, verbose=True):
         """
@@ -334,7 +372,7 @@ class vmodel(object):
         self.knots=knots
         return
     
-    def plot(self, ds=1000, unit='km', vmin=2.5, vmax=3.5):
+    def plot(self, ds=1000, unit='km', cmap='seismic_r', vmin=None, vmax=None):
         """Plot velocity model
         =============================================================================
         Input Parameters:
@@ -343,19 +381,21 @@ class vmodel(object):
         vmin, vmax      - vmin,vmax for colorbar
         =============================================================================
         """
-        
+        if cmap=='ses3d':
+            cmap = colormaps.make_colormap({0.0:[0.1,0.0,0.0], 0.2:[0.8,0.0,0.0], 0.3:[1.0,0.7,0.0],0.48:[0.92,0.92,0.92],
+                0.5:[0.92,0.92,0.92], 0.52:[0.92,0.92,0.92], 0.7:[0.0,0.6,0.7], 0.8:[0.0,0.0,0.8], 1.0:[0.0,0.0,0.1]})
         if self.plotflag==False:
             raise ValueError('No plot array!')
         plt.figure(figsize=(16,13))
         if self.regular==True:
-            plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap='seismic_r', vmin=vmin, vmax=vmax)
+            plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap=cmap, vmin=vmin, vmax=vmax)
         else:
             xi = np.linspace(self.xmin, self.xmax, self.Nx*10)
             zi = np.linspace(self.zmin, self.zmax, self.Nz*10)
             self.xi, self.zi = np.meshgrid(xi, zi)
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
-            plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap='seismic_r', vmin=vmin, vmax=vmax)
+            plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax)
         ##########################################
         # plt.plot( 320, 320 , 'y*', markersize=30)
         ##########################################
@@ -368,6 +408,8 @@ class vmodel(object):
         plt.xticks(fontsize=20)
         plt.show()
         return
+    
+    
     
     def GetMinMaxV(self):
         """

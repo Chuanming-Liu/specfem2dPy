@@ -1,0 +1,12 @@
+{
+  "_mod": "Mon, 08 Aug 2016 09:29:51 GMT", 
+  "_url": "https://conda.binstar.org/obspy/noarch/", 
+  "info": {
+    "arch": null, 
+    "default_numpy_version": "1.7", 
+    "default_python_version": "2.7", 
+    "platform": null, 
+    "subdir": "noarch"
+  }, 
+  "packages": {}
+}
