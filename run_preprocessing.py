@@ -11,11 +11,11 @@ import vmodel
 
 ### Velocity Model
 # Vm=vmodel.vmodel(xmin=0, xmax=2000000, Nx=400, zmin=0, zmax=2000000, Nz=400, Vs=3000.)
-Vm=vmodel.vmodel(xmin=0, xmax=8000000, Nx=400, zmin=0, zmax=4000000, Nz=400, Vs=3000.)
+Vm=vmodel.vmodel(xmin=0, xmax=8000000, Nx=1600, zmin=0, zmax=4000000, Nz=800, Vs=3000.)
 # Vm.read('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat_backup')
 # Vm.read('/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_1200/DATA/proc000000_rho_vp_vs.dat_backup')
 Vm.setbackground(vs=3000.)
-Vm.readPhv(x0=0, z0=0, infname='10.phase_smooth.map')
+Vm.readPhv(x0=200000, z0=200000, evlo=129., evla=41.306, infname='10.phase_smooth.map')
 # Vm.CircleCosineAnomaly( Xc=1200000, Zc=1200000, R=100000, dv = -0.1)
 Vm.plot()
 # Vm.write('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/DATA/proc000000_rho_vp_vs.dat', dt=0.05, fc=0.1)

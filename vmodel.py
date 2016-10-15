@@ -253,7 +253,7 @@ class vmodel(object):
                 self.VsArrPlot[Index]=va
         return
     
-    def readPhv(self, x0, z0, infname, lon0=None, lat0=None, dx=0.5):
+    def readPhv(self, x0, z0, infname, evlo=None, evla=None, lon0=None, lat0=None, dx=0.5):
         inArr=np.loadtxt(infname)
         lons=inArr[:,0]; lats=inArr[:,1]; phvArr=inArr[:,2]*1000.
         lon0=lons.min(); lat0=lats.min(); lon1=lons.max(); lat1=lats.max()
@@ -263,12 +263,17 @@ class vmodel(object):
         # maxdist_y=maxdistNS/1000.; maxdist_x=maxdistEW/1000.
         m = Basemap(projection='cea',llcrnrlat=lat0,urcrnrlat=lat1, llcrnrlon=lon0,urcrnrlon=lon1,resolution='c')
         xins, zins = m(lons, lats)
-        if xins.max()>self.xmax-x0 or zins.max()>self.zmax-z0:
-            raise ValueError('Input phase velocity map is too large!')
+        try:
+            evx, evz=m(evlo, evla)
+            print 'Source location: ', evx, evz
+        except:
+            pass
+        # if xins.max()>self.xmax-x0 or zins.max()>self.zmax-z0:
+        #     raise ValueError('Input phase velocity map is too large!')
         Numb=int(lons.size)
         radius, az, baz=obspy.geodetics.gps2dist_azimuth(0, 0, dx, 0)
         for i in xrange(Numb):
-            print i
+            # print i
             x=xins[i]; z=zins[i]; lon=lons[i]; lat=lats[i]; va=phvArr[i]
             # xc=x0+x; zc=z0+z
             # self.CircleHomoAnomaly(Xc=xc, Zc=zc, R=radius, va=va)
@@ -276,15 +281,6 @@ class vmodel(object):
             self.BlockHomoAnomaly(Xmin=xmin, Xmax=xmax, Zmin=zmin, Zmax=zmax, va=va)
         return
     
-    def smooth(self, sigma):
-        v_filtered=self.VsArr
-        for iteration in xrange(int(sigma)):
-            for i in np.arange(1,self.lat.size+1):
-                for j in np.arange(1,self.lon.size+1):
-                    v_filtered[i,j]=(self.cushion_vArr[i,j]+self.cushion_vArr[i+1,j]+self.cushion_vArr[i-1,j]+self.cushion_vArr[i,j+1]+self.cushion_vArr[i,j-1])/5.0
-        self.cushion_vArr=v_filtered
-        self._change_v()
-        return
         
     
     
