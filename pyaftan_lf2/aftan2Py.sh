@@ -10,6 +10,6 @@ f2py -c pyaftan.pyf aftanipg.f aftanpg.f fmax.f  ftfilt.f  mspline.f  phtovel.f 
 #f2py -c pyaftan.pyf -m pyaftan aftanipg.f aftanpg.f fmax.f  ftfilt.f  mspline.f  phtovel.f  pred_cur.f  taper.f tapers.f  tgauss.f  trigger.f 
 #f2py -c aftanipg.f aftanpg.f fmax.f  ftfilt.f  mspline.f  phtovel.f  pred_cur.f  taper.f tapers.f  tgauss.f  trigger.f -m pyaftan -lfftw3 --f77flags=-ffixed-line-length-none --fcompiler=gfortran
 
-module load intel/intel-13.0.0 
+#module load intel/intel-13.0.0 
 
 cp pyaftan.so /projects/life9360/.local/lib

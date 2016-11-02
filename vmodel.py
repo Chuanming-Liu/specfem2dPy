@@ -110,7 +110,7 @@ class vmodel(object):
         
     
     
-    def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va, dv=None):
+    def BlockHomoAnomaly(self, Xmin, Xmax, Zmin, Zmax, va=None, dv=None):
         """
         Inplement block anomaly in the model for Vs
         ============================================================================================

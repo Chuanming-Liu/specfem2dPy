@@ -582,7 +582,7 @@ class InputFtanParam(object):
 
 class specfem2dASDF(pyasdf.ASDFDataSet):
 
-    def readtxt(self, stafile, datadir, verbose=True):
+    def readtxt(self, stafile, datadir, verbose=True, factor=None):
         """ Read txt seismogram files into ASDF dataset according to given station list
         =============================================================
         Input Parameters:
@@ -610,6 +610,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
             tr.stats.station=sta.stacode
             tr.stats.delta=time[1]-time[0]
             tr.stats.network=sta.network
+            if factor!=None: tr.decimate(factor=factor)
             self.add_waveforms(tr, tag='mem2d_raw')
         print 'End reading txt files!'
         return
