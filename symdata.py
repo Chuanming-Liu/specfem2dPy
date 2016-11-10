@@ -541,6 +541,37 @@ class specfem2dtrace(obspy.core.trace.Trace):
             print 'Error: FTAN Parameters are not available!'
         return
 
+    def get_adjoint_stf(self, EPS=1e-40, tmin=None, tmax=None, vmin=2.0, vmax=4.0):
+        """ This program cuts a certain portion of the seismograms and convert it
+                into the adjoint source for generating sensitivity kernels
+        =========================================================================================================================
+        Input Parameters:
+        
+        
+        Output:
+        self.ftanparam, a object of ftanParam class, to store output aftan results
+        =========================================================================================================================
+        """
+        try:
+            dist=self.stats.sac.dist
+        except:
+            dist = np.sqrt( (self.stats.sac.evlo - self.stats.sac.stlo)**2 + (self.stats.sac.evla - self.stats.sac.stla)**2 )
+            self.stats.sac.dist=dist
+        if tmin==None: tmin=dist/vmax
+        if tmax==None: tmax=dist/vmin
+        istart = max(np.floor(tmin/self.stats.delta), 1)
+        iend   = min(np.ceiling(tmax/self.stats.delta), self.stats.npts)
+        print 'istart =',istart, 'iend =', iend
+        print 'tstart =',istart*self.stats.delta, 'tend =', iend*self.stats.delta
+        if(istart >= iend): raise ValueError('check istart,iend')
+        nlenval = iend - istart +1
+        time_window = np.zeros(self.stats.npts, dtype=float)
+        seism_win   = self.data
+        veloc       = self.copy(); veloc.differentiate()
+        accel       = veloc.copy(); accel.differentiate()
+        seism_veloc = veloc.data
+        seism_accel = accel.data
+        # window
 
 class InputFtanParam(object): 
     """
