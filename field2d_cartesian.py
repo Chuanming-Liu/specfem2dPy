@@ -1055,3 +1055,220 @@ class WaveSnapshot_mp(object):
         return im
     
 
+class kernel_field(object):
+    """
+    An object to handle sensitivity kernel from SPECFEM2D
+    This object can deal with mpirun results
+    ========================================================================================
+    Parameters:
+    datadir         - data directory
+    kernelftype     - kernel file type (0: rho, vp, vs; 1: rho, kappa, mu)
+    dx, dz          - (half) element size
+    Nx, Nz          - (doubled) element number in x, z 
+            note that some data points locate at the mid point between two element point 
+    XArr, ZArr      - arrays for element location
+    lpd             - Lagrange polynomial degree
+    ========================================================================================
+    """
+    def __init__(self, datadir, xmax, Nx, zmax, Nz, xmin=0, zmin=0, kernelftype=0, lpd=4, nproc = 1):
+        """ 
+        ========================================================================================
+        Input Parameters:
+        xmin, xmax, zmin, zmax   - bound of study region
+        nt                       - number of total time step
+        ni                       - initial time step number
+        dn                       - time step interval
+        ========================================================================================
+        """
+        self.datadir=datadir
+        if kernelftype==0: self.kernelfname='proc%06d_rhop_alpha_beta_kernel.dat'
+        else: self.kernelfname=kernelfname='proc%06d_rho_kappa_mu_kernel.dat'
+        self.dx=(xmax-xmin)/Nx/2 #  half of element size
+        self.dz=(zmax-zmin)/Nz/2
+        self.Nx=2*Nx # double the element number
+        self.Nz=2*Nz
+        self.lpd=lpd
+        XArr = np.arange(2*Nx+1)*self.dx+xmin
+        ZArr = np.arange(2*Nz+1)*self.dz+zmin
+        self.XArr, self.ZArr = np.meshgrid(XArr, ZArr)
+        self.nproc = nproc
+        self.index = np.array([], dtype=int)
+        self.xmin = xmin
+        self.xmax = xmax
+        self.zmin = zmin
+        self.zmax = zmax
+        return
+    
+    def read_kernel_file(self):
+        """
+        Read kernel files
+        number of grid points = (NelementX*lpd+1) * (NelementZ*lpd+1)
+        """
+        self.XarrGrid = np.array([])
+        self.ZarrGrid = np.array([])
+        self.kernel_rho_Grid = np.array([])
+        self.kernel_vp_Grid = np.array([])
+        self.kernel_vs_Grid = np.array([])
+        for iproc in xrange(self.nproc):
+            kernelfname = self.kernelfname % iproc
+            print 'Reading kernel file:', kernelfname
+            infname=self.datadir+'/'+kernelfname
+            InArr=np.loadtxt(infname)
+            self.XarrGrid = np.append(self.XarrGrid, InArr[:,0])
+            self.ZarrGrid = np.append(self.ZarrGrid, InArr[:,1])
+            self.kernel_rho_Grid = np.append(self.kernel_rho_Grid, InArr[:,2])
+            self.kernel_vp_Grid = np.append(self.kernel_vp_Grid, InArr[:,3])
+            self.kernel_vs_Grid = np.append(self.kernel_vs_Grid, InArr[:,4])
+        self.ind = np.lexsort((self.XarrGrid, self.ZarrGrid))
+        self.XarrGrid = self.XarrGrid[self.ind]
+        self.ZarrGrid = self.ZarrGrid[self.ind]
+        self.xmin=self.XarrGrid.min()
+        self.xmax=self.XarrGrid.max()
+        self.zmin=self.ZarrGrid.min()
+        self.zmax=self.ZarrGrid.max()
+        print 'End reading kernel file !'
+        return
+    
+    def GetElementIndex(self):
+        """Get the element indices
+        """
+        print 'Getting element indices !'
+        try:
+            Ngrid = self.XarrGrid.size
+        except:
+            self.ReadGridFile()
+            Ngrid = self.XarrGrid.size
+        x0 = float('inf')
+        z0 = float('inf')
+        for i in xrange( Ngrid ):
+            if i%100000==0:
+                print 'Step:', i, 'of', Ngrid
+            x = self.XarrGrid[i]
+            z = self.ZarrGrid[i]
+            if x == x0 and z == z0: continue
+            x0 = self.XarrGrid[i]
+            z0 = self.ZarrGrid[i]
+            remains=np.remainder(np.array([x, z]), self.dx)
+            if remains[0]==0 and remains[1]==0:
+                self.index=np.append(self.index, self.ind[i])
+        print 'End getting element indices !'
+        return
+    
+    def SaveElementIndex(self, outdir):
+        """
+        Save the element indices
+        """
+        outfname=outdir+'/index_kernel.npy'
+        np.save(outfname, self.index)
+        return
+    
+    def LoadElementIndex(self, datadir):
+        """
+        Load the element indices
+        """
+        infname=datadir+'/index_kernel.npy'
+        self.index=np.load(infname)
+        return
+    
+    def get_kernel_value(self, kerneltype='vs'):
+        """
+        get sensitivity kernel value
+        """
+        if kerneltype=='vs': kernelvalue=self.kernel_vs_Grid
+        elif kerneltype=='vp': kernelvalue=self.kernel_vp_Grid
+        elif kerneltype=='rho': kernelvalue=self.kernel_rho_Grid
+        else: raise ValueError('Kernel type: '+kerneltype+ ' not exists!')
+        self.kerneltype=kerneltype
+        self.kernelvalue=np.take(kernelvalue, self.index).reshape(self.Nz+1, self.Nx+1)
+        return
+    
+    def plot_kernel(self, unit='km',  factor=1., outfname=None, zsize=10, vmin = None, vmax = None):
+        """
+        Plot sensitivity kernel
+        """
+        ds=1000. # ds =1000 meters
+        XLength=self.xmax-self.xmin
+        ZLength=self.zmax-self.zmin
+        xsize=zsize*(XLength/ZLength)
+        # fig = plt.figure(figsize=(xsize, zsize))
+        fig, ax = plt.subplots()
+        from lasif import colors
+        cmap=colors.get_colormap('tomo_80_perc_linear_lightness')
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.kernelvalue, shading='gouraud', cmap=cmap,
+                        vmin = vmin, vmax = vmax)
+        plt.xlabel('x('+unit+')', fontsize=30)
+        plt.ylabel('z('+unit+')', fontsize=30)
+        # plt.colorbar()
+        # plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
+        plt.axis('scaled')
+        cb=plt.colorbar()#, size="3%", pad='2%')
+        cb.set_label(r"${\mathrm{s}}$ "+r"${\mathrm{m}^\mathrm{-2}}$", fontsize=20, rotation=90)
+        from matplotlib.patches import Circle, Wedge, Polygon, Arc
+        from matplotlib.collections import PatchCollection
+        # fig, ax = plt.subplots()
+        # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap='seismic_r', shading='gouraud', vmin=vmin, vmax= vmax)
+        ax.add_collection(PatchCollection([Circle(xy=(1000, 1000), radius=100)], facecolor='w', edgecolor='k', alpha=0.1))
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
+        # plt.ylim([0, 3200])
+        plt.xlim([0, 3200])
+        plt.show()
+        return im
+    
+    def writeASDF(self, outfname):
+        """
+        Write sensitivity kernel to ASDF Dataset
+        ========================================================================================
+        Output in ASDF auxiliary dataset
+        data        - sensitivity kernel numpy array of shape (self.Nz+1, self.Nx+1)
+        data_type   - SenKernel
+        path        - kernel type ('vs', 'vp' ...)
+        parameters  - header dictionary( xmin, xmax, zmin, zmax)
+        ========================================================================================
+        """
+        dbase=pyasdf.ASDFDataSet(outfname)
+        header={'xmin': self.xmin, 'xmax': self.xmax, 'zmin': self.zmin, 'zmax': self.zmax}
+        dbase.add_auxiliary_data(data=self.kernelvalue, data_type='SenKernel', path=self.kerneltype, parameters=header)
+        return
+    
+    def readASDF(self, infname, kerneltype='vs'):
+        """
+        Read sensitivity kernel from ASDF Dataset
+        """
+        dbase=pyasdf.ASDFDataSet(infname)
+        self.kernelvalue=dbase.auxiliary_data.SenKernel[kerneltype].data.value
+        self.xmin=dbase.auxiliary_data.SenKernel[kerneltype].parameters['xmin']
+        self.xmax=dbase.auxiliary_data.SenKernel[kerneltype].parameters['xmax']
+        self.zmin=dbase.auxiliary_data.SenKernel[kerneltype].parameters['zmin']
+        self.zmax=dbase.auxiliary_data.SenKernel[kerneltype].parameters['zmax']
+        return
+    
+    def get_value(self, x=None, z=None):
+        if z!=None: ind=np.where(self.ZArr==z)
+        if x!=None: ind=np.where(self.XArr==x)
+        self.value=self.kernelvalue[ind]
+        return
+    
+    def get_dvalue(self, Xc, Zc,  R, vs, va=None, dv=None):
+        dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
+        if va !=None: dva = va - vs
+        else: dva = vs*dv
+        delD = R - dArr
+        IndexIn = (delD >=0)
+        dvArr= IndexIn * ( 1+np.cos( np.pi* dArr / R ) )/2. * dva
+        # im=plt.pcolormesh(self.XArr/1000., self.ZArr/1000., dvArr, shading='gouraud', cmap='seismic_r',
+        #                 vmin = None, vmax = None)
+        # plt.colorbar()
+        # plt.xlabel('x('+unit+')', fontsize=30)
+        # plt.ylabel('z('+unit+')', fontsize=30)
+        # plt.show()
+        dchi=np.sum(dvArr*self.kernelvalue*self.dx*self.dz)/vs
+        return dchi
+        
+        
+        
+        
+    # def plot_line(self):
+    #     ZArr=kfield.ZArr[:, 0]
+    
+

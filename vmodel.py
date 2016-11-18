@@ -368,7 +368,7 @@ class vmodel(object):
         self.knots=knots
         return
     
-    def plot(self, ds=1000, unit='km', cmap='seismic_r', vmin=None, vmax=None):
+    def plot(self, ds=1000, unit='km', cmap='seismic_r', vmin=None, vmax=None, zsize=10):
         """Plot velocity model
         =============================================================================
         Input Parameters:
@@ -377,36 +377,43 @@ class vmodel(object):
         vmin, vmax      - vmin,vmax for colorbar
         =============================================================================
         """
+        
+        # XLength=self.xmax-self.xmin
+        # ZLength=self.zmax-self.zmin
+        # xsize=zsize*(XLength/ZLength)
+        # fig = plt.figure(figsize=(xsize, zsize))
         if cmap=='ses3d':
             cmap = colormaps.make_colormap({0.0:[0.1,0.0,0.0], 0.2:[0.8,0.0,0.0], 0.3:[1.0,0.7,0.0],0.48:[0.92,0.92,0.92],
                 0.5:[0.92,0.92,0.92], 0.52:[0.92,0.92,0.92], 0.7:[0.0,0.6,0.7], 0.8:[0.0,0.0,0.8], 1.0:[0.0,0.0,0.1]})
         if self.plotflag==False:
             raise ValueError('No plot array!')
-        plt.figure(figsize=(16,13))
+        # plt.figure(figsize=(16,13))
         if self.regular==True:
-            plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap=cmap, vmin=vmin, vmax=vmax)
+            im=plt.pcolormesh(self.XArrPlot/ds, self.ZArrPlot/ds, self.VsArrPlot/ds, cmap=cmap, vmin=vmin, vmax=vmax)
         else:
             xi = np.linspace(self.xmin, self.xmax, self.Nx*10)
             zi = np.linspace(self.zmin, self.zmax, self.Nz*10)
             self.xi, self.zi = np.meshgrid(xi, zi)
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
-            plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax)
+            im=plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax)
         ##########################################
-        # plt.plot( 320, 320 , 'y*', markersize=30)
+        plt.plot( 500., 1000 , 'y*', markersize=30)
+        plt.plot( [500., 8000.], [1000, 1000] , 'b-.', lw=3)
         ##########################################
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)
-        plt.colorbar()
-        plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
-        # plt.axis('scaled')
+        # plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
+        plt.axis('scaled')
+        cb=plt.colorbar(shrink=0.5)#, size="3%", pad='2%')
+        cb.set_label('Vs (km/s)', fontsize=20, rotation=90)
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
+        # plt.ylim([])
         plt.show()
         return
     
-    
-    
+
     def GetMinMaxV(self):
         """
         Get minimum/maximum vs 

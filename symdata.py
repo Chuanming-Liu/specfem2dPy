@@ -541,26 +541,46 @@ class specfem2dtrace(obspy.core.trace.Trace):
             print 'Error: FTAN Parameters are not available!'
         return
 
-    def get_adjoint_stf(self, EPS=1e-40, tmin=None, tmax=None, vmin=2.0, vmax=4.0):
-        """ This program cuts a certain portion of the seismograms and convert it
+    def get_adjoint_stf(self, outdir, EPS=1e-40, t0=-48., period=10., fstart=5., fend=10., tmin=None, tmax=None, vmin=None, vmax=None, kerneltype='t'):
+        """ Cuts a certain portion of the seismograms and convert it
                 into the adjoint source for generating sensitivity kernels
-        =========================================================================================================================
+            The cutting window will be determined with period and measured group travel time, but can also be defined with
+                tmin, tmax, vmin, vmax
+        ==============================================================================================================================
         Input Parameters:
-        
+        outdir      - output directory
+        EPS         - threshold value for normalization parameters
+        t0          - time delay
+        period      - dominant period of the wave, used to determin cutting window
+        fstart, fend- factor for the start and end of cutting window
+        tmin, tmax  - start, end time of the cutting window, default is None
+        vmin, vmax  - end, start velocity of the cutting window, default is None
+        kerneltype  - type of sensitivity kernel
+                t : travel time source, eq. (45) in Tromp et al.(2005); amp : amplitude source, eq. (67) in Tromp et al.(2005)
         
         Output:
-        self.ftanparam, a object of ftanParam class, to store output aftan results
-        =========================================================================================================================
+        outdir/SEM/self.stats.network+'.'+self.stats.station+'.BXY.adj'
+        ==============================================================================================================================
+        Reference:
+        Tromp, Jeroen, Carl Tape, and Qinya Liu. "Seismic tomography, adjoint methods, time reversal and banana-doughnut kernels."
+            Geophysical Journal International 160.1 (2005): 195-216.
         """
-        try:
-            dist=self.stats.sac.dist
+        try: dist=self.stats.sac.dist
         except:
             dist = np.sqrt( (self.stats.sac.evlo - self.stats.sac.stlo)**2 + (self.stats.sac.evla - self.stats.sac.stla)**2 )
-            self.stats.sac.dist=dist
-        if tmin==None: tmin=dist/vmax
-        if tmax==None: tmax=dist/vmin
+            self.stats.sac.dist = dist
+        if ( tmin == None and vmax == None) or ( tmax == None and vmin == None ):
+            self.aftan()
+            nfout=self.ftanparam.nfout2_1
+            Varr=self.ftanparam.arr2_1[2,:nfout]; obTArr = self.ftanparam.arr2_1[1,:nfout]
+            Vgr=np.interp(period, obTArr, Varr)
+            if tmin==None: tmin=dist/Vgr-period*fstart
+            if tmax==None: tmax=dist/Vgr+period*fend
+        else:
+            if tmin==None and vmax!=None: tmin=dist/vmax
+            if tmax==None and vmin!=None: tmax=dist/vmin
         istart = max(np.floor(tmin/self.stats.delta), 1)
-        iend   = min(np.ceiling(tmax/self.stats.delta), self.stats.npts)
+        iend   = min(np.ceil(tmax/self.stats.delta), self.stats.npts)
         print 'istart =',istart, 'iend =', iend
         print 'tstart =',istart*self.stats.delta, 'tend =', iend*self.stats.delta
         if(istart >= iend): raise ValueError('check istart,iend')
@@ -571,7 +591,38 @@ class specfem2dtrace(obspy.core.trace.Trace):
         accel       = veloc.copy(); accel.differentiate()
         seism_veloc = veloc.data
         seism_accel = accel.data
-        # window
+        itimeArr    = np.arange(iend-istart) + istart
+        time_window[int(istart):int(iend)] = 1. - (2.* (itimeArr - istart)/(iend-istart) -1.)**2 # Welch window
+        if kerneltype=='t':
+            Nnorm = self.stats.delta*np.sum(time_window*seism_win*seism_accel)
+            ft_bar= seism_veloc * time_window / Nnorm
+        elif kerneltype=='amp':
+            Nnorm = self.stats.delta*np.sum(time_window*seism_win*seism_win)
+            ft_bar= seism_win * time_window / Nnorm
+        if abs(Nnorm) < EPS: ft_bar=np.zeros(seism_win.size)
+        # output to txt file
+        if not os.path.isdir(outdir+'/SEM'): os.makedirs(outdir+'/SEM')
+        outfname=outdir+'/SEM/'+self.stats.network+'.'+self.stats.station+'.BXY.adj'
+        time=np.arange(self.data.size)*self.stats.delta+t0
+        outArr=np.append(time, ft_bar)
+        outArr=outArr.reshape(2, time.size)
+        outArr=outArr.T
+        np.savetxt(outfname, outArr, fmt='%21.15lf%25.15lf')
+        # 
+        outfname=outdir+'/SEM/'+self.stats.network+'.'+self.stats.station+'.BXX.adj'
+        outArrX =np.append(time, np.zeros(time.size))
+        outArrX =outArrX.reshape(2, time.size)
+        outArrX =outArrX.T
+        np.savetxt(outfname, outArrX, fmt='%21.15lf%25.15lf')
+        # 
+        outfname=outdir+'/SEM/'+self.stats.network+'.'+self.stats.station+'.BXZ.adj'
+        time=np.arange(self.data.size)*self.stats.delta+t0
+        outArrY=np.append(time, np.zeros(time.size))
+        outArrY=outArrY.reshape(2, time.size)
+        outArrY=outArrY.T
+        np.savetxt(outfname, outArrY, fmt='%21.15lf%25.15lf')
+        return
+        
 
 class InputFtanParam(object): 
     """
@@ -662,7 +713,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
         self.add_quakeml(catalog)
         return
     
-    def aftan(self, tb=0.0, outdir=None, inftan=InputFtanParam(), vph=3.0, Tmin=5., Nt=10., dT=5., basic1=True, basic2=False,
+    def aftan(self, tb=-12., outdir=None, inftan=InputFtanParam(), vph=3.0, Tmin=5., Nt=10., dT=5., basic1=True, basic2=False,
             pmf1=False, pmf2=False):
         """ aftan analysis for ASDF Dataset
         ===================================================================================
@@ -1023,6 +1074,41 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
                     linewidth = 2.5 )
         # plt.show()
         return
+    
+    def get_trace(self, staid=None, lon=None, lat=None, outdir='.', SLst=None, channel='BXY', tb=-12.):
+        try:
+            evlo=self.events.events[0].origins[0].longitude
+            evla=self.events.events[0].origins[0].latitude
+        except:
+            raise AttributeError('No event specified to the datasets!')
+        if staid==None and (lon==None or lat==None):
+            raise ValueError('Error Input')
+        if staid!=None:
+            tr=self.waveforms[staid].mem2d_raw[0]
+            lat, elev, lon=self.waveforms[staid].coordinates.values()
+        elif isinstance(SLst, stations.StaLst):
+            for sta in SLst.stations:
+                if sta.lon!=lon or sta.lat!=lat: continue
+                else:
+                    staid=sta.network+'.'+sta.stacode
+                    tr=self.waveforms[staid].mem2d_raw[0]
+                    break
+        else:
+            for staid in self.waveforms.list():
+                # Get data from ASDF dataset
+                subdset = self.waveforms[staid]
+                stla, elev, stlo=subdset.coordinates.values()
+                if stlo!=lon or stla!=lat:
+                    continue
+                else:
+                    tr=subdset.mem2d_raw[0]
+                    break
+        tr.stats.sac={}
+        tr.stats.sac.stlo=lon*100.; tr.stats.sac.stla=lat*100.
+        tr.stats.sac.evlo=evlo; tr.stats.sac.evla=evla
+        tr.stats.sac.b=tb
+        
+        return tr
         
 def aftan4mp(nTr, outdir, inftan):
     print 'aftan analysis for', nTr.stats.network, nTr.stats.station#, i.value#, ntrace.stats.sac.dist
