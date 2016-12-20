@@ -3,11 +3,11 @@ import symdata
 
 
 
-dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/seismogram.h5')
-# 
-dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/DATA/STATIONS',
-        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/OUTPUT_FILES', factor=10)
-dbase.AddEvent(x=600., z=1000.)
+dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/seismogram.h5')
+
+dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/DATA/STATIONS',
+        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/OUTPUT_FILES', factor=10)
+dbase.AddEvent(x=200., z=1000.)
 inftan=symdata.InputFtanParam()
 inftan.ffact=5.
 inftan.pmf=True
@@ -32,13 +32,13 @@ try:
     del dbase.auxiliary_data.DISPpmf2interp
 except:
     pass
-dbase.InterpDisp(data_type='DISPpmf2')
+dbase.InterpDisp(data_type='DISPbasic2')
 # ndbase=dbase.SelectData(outfname='sw4synthetics001.h5', stafile='station_001.lst')
 
 # del dbase.auxiliary_data.FieldDISPpmf2interp
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='amp', data_type='DISPpmf2')
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='Vgr',  data_type='DISPpmf2')
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='Vph',  data_type='DISPpmf2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/field_data', fieldtype='amp', data_type='DISPbasic2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/field_data', fieldtype='Vgr',  data_type='DISPbasic2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/kernel_travelT_0.001/field_data', fieldtype='Vph',  data_type='DISPbasic2')
 
 
 

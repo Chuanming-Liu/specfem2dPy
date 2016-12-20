@@ -7,10 +7,9 @@ Dx=1000.*100.
 Dz=1000.*1000.
 
 ### Generate Station List
-# SLst=stations.StaLst();
-# SLst.HomoStaLst(xmin=0, xmax=1000000, zmin=0, zmax=1000000, dx=10000, dz=10000);
-# # SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
-# SLst.WriteStaList('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
+SLst=stations.StaLst();
+SLst.HomoStaLst(xmin=0, xmax=1000000, zmin=0, zmax=1000000, dx=10000, dz=10000);
+SLst.WriteStaList('/projects/life9360/code/SEM/specfem2d/EXAMPLES/LFMembrane_SH/DATA/STATIONS');
 # 
 # ### Velocity Model
 Vm=vmodel.vmodel(xmin=0, xmax=3000000+2*Dx, Nx=640, zmin=0, zmax=600000+2*Dz, Nz=520, Vs=3231.62)

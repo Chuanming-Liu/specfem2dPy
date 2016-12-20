@@ -6,7 +6,7 @@ from scipy import stats
 
 
 Dx=200.
-infname = '/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_healing_004/field_data/Tgr_10.0.txt'
+infname = '/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_ring_basin/field_data/Tgr_10.0.txt'
 inArr=np.loadtxt(infname)
 
 XArr=inArr[:,0]
@@ -17,7 +17,7 @@ XArr=XArr[ind]
 TArr=TArr[ind]
 
 XArr2= XArr
-TArr2= np.abs(XArr-Dx)/np.ones(XArr.size)/3.
+TArr2= np.abs(XArr-Dx)/np.ones(XArr.size)/3.23
 
 # index=np.where(XArr==1300.)
 # amp=AmpArr[index]
@@ -32,8 +32,8 @@ fig, ax=plt.subplots()
 ax.plot(XArr, (TArr-TArr2-1.4),'ro', lw=3, markersize=10, label='travel time difference')
 ax.plot(Dx, 1, 'y*', markersize=20)
 plt.legend(loc='lower right', fontsize=25)
-y1=900
-y2=1100
+y1=1000
+y2=1400
 ax.fill_betweenx(np.array([-0.1, TArr.max()]), y1, y2, facecolor='red', alpha=0.5)
 # y1=2200
 # y2=2400

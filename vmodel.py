@@ -137,7 +137,7 @@ class vmodel(object):
                 self.VsArrPlot[Index]=va
         return
     
-    def CircleHomoAnomaly(self, Xc, Zc, R, va, dv=None):
+    def CircleHomoAnomaly(self, Xc, Zc, R, va=None, dv=None):
         """
         Inplement circle anomaly in the model for Vs
         =============================================================================
@@ -206,10 +206,8 @@ class vmodel(object):
         =============================================================================
         """
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
-        if va !=None:
-            dva = va - self.Vs
-        else:
-            dva = self.Vs*dv
+        if va !=None: dva = va - self.Vs
+        else: dva = self.Vs*dv
         delD = R - dArr
         IndexIn = (delD >=0)
         # self.VsArr = 0.5 * (np.sign(delD) + 1) * ( 1+np.cos( np.pi* dArr / R ) ) * dva + self.VsArr
@@ -240,17 +238,13 @@ class vmodel(object):
         print 'Adding homo ring anomaly Xc=', Xc,' Zc=', Zc, ' Rmax=',Rmax, ' Rmin=', Rmin
         dArr = np.sqrt( (self.XArr-Xc)**2 + (self.ZArr-Zc)**2)
         Index = (dArr <= Rmax) * (dArr > Rmin) 
-        if dv!=None:
-            self.VsArr[Index]=self.VsArr[Index]*(1+dv)
-        else:
-            self.VsArr[Index]=va
+        if dv!=None: self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else: self.VsArr[Index]=va
         if self.plotflag==True:
             dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
             Index = (dArr <= Rmax) * (dArr > Rmin) 
-            if dv!=None:
-                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
-            else:
-                self.VsArrPlot[Index]=va
+            if dv!=None: self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else: self.VsArrPlot[Index]=va
         return
     
     def readPhv(self, x0, z0, infname, evlo=None, evla=None, lon0=None, lat0=None, dx=0.5):
@@ -281,10 +275,7 @@ class vmodel(object):
             self.BlockHomoAnomaly(Xmin=xmin, Xmax=xmax, Zmin=zmin, Zmax=zmax, va=va)
         return
     
-        
-    
-    
-    def ASDFmodel(self, infname, per=10., phgr=1, verbose=True):
+    def ASDFmodel(self, infname, per=10., phgr=1, verbose=True, Dx=0., Dz=0.):
         """
         Read ASDF model
         =============================================================================
@@ -302,9 +293,8 @@ class vmodel(object):
         if not np.any(perArr==per):
             raise ValueError('Period ', per,' sec not in the theoretical dispersion curve !' )
         Vs0 = vArr[perArr==per]* 1000.
-        self.VsArr[:] = Vs0 
-        if self.plotflag == True:
-            self.VsArrPlot[:]=Vs0 
+        self.setbackground(vs=Vs0) 
+        if self.plotflag == True: self.VsArrPlot[:]=Vs0 
         for auxid in dbase.auxiliary_data.Disp.list()[1:]:
             perArr = dbase.auxiliary_data.Disp[auxid].data.value[0, :]
             vArr=dbase.auxiliary_data.Disp[auxid].data.value[phgr, :]
@@ -313,7 +303,7 @@ class vmodel(object):
             x=dbase.auxiliary_data.Disp[auxid].parameters['x']
             y=dbase.auxiliary_data.Disp[auxid].parameters['y']
             Vs = vArr[perArr==per] * 1000.
-            self.RingHomoAnomaly(Xc=x, Zc=y, Rmax=Rmax, Rmin=Rmin, va=Vs)
+            self.RingHomoAnomaly(Xc=x+Dx, Zc=y+Dz, Rmax=Rmax, Rmin=Rmin, va=Vs)
         return
             
     
@@ -398,8 +388,8 @@ class vmodel(object):
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
             im=plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax)
         ##########################################
-        plt.plot( 500., 1000 , 'y*', markersize=30)
-        plt.plot( [500., 8000.], [1000, 1000] , 'b-.', lw=3)
+        plt.plot( 200., 1300 , 'y*', markersize=30)
+        # plt.plot( [200., 1300.], [3200, 1300] , 'b-.', lw=3)
         ##########################################
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)

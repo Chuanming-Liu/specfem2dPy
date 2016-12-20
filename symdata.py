@@ -863,6 +863,7 @@ class specfem2dASDF(pyasdf.ASDFDataSet):
             Np=index['Np']
             if Np < 5:
                 print 'Not enough datapoints for: '+ knetwk+'.'+kstnm
+                continue
             obsT=data[index['To']][:Np]
             Vgr=np.interp(pers, obsT, data[index['Vgr']][:Np] )
             Vph=np.interp(pers, obsT, data[index['Vph']][:Np] )

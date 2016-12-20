@@ -6,7 +6,7 @@ import copy
 
 
 kfield=field2d_cartesian.kernel_field(xmin=0, xmax=4000000, Nx=800, \
-                    zmin=0, zmax=2000000, Nz=400, datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/multipathing_2000km_4000km_adj_000/OUTPUT_FILES', nproc=12)
+                    zmin=0, zmax=2000000, Nz=400, datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_healing_006_adj/OUTPUT_FILES', nproc=12)
 # kfield.read_kernel_file()
 # kfield.GetElementIndex()
 # kfield.SaveElementIndex('/work3/leon/kernel_homo')
@@ -16,7 +16,7 @@ kfield=field2d_cartesian.kernel_field(xmin=0, xmax=4000000, Nx=800, \
 # kfield2=copy.deepcopy(kfield)
 # kfield3=copy.deepcopy(kfield)
 # kfield.readASDF(infname='kernel_circular.h5')
-kfield.readASDF(infname='/lustre/janus_scratch/life9360/specfem2d_working_dir/multipathing_2000km_4000km_adj_001/kernel_T.h5')
+kfield.readASDF(infname='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_healing_006_adj/kernel_T.h5')
 # kfield3.readASDF(infname='kernel_rectangle.h5')
 # kfield3.readASDF(infname='kernel_rectangle.h5')
 # kfield4=copy.deepcopy(kfield2)
