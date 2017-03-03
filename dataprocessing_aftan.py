@@ -3,16 +3,18 @@ import symdata
 
 
 
-dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/seismogram.h5')
+
+dbase=symdata.specfem2dASDF('/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/seismogram.h5')
 # 
-dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/DATA/STATIONS',
-        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/OUTPUT_FILES', factor=10)
-dbase.AddEvent(x=600., z=1000.)
+dbase.readtxt('/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/DATA/STATIONS',
+        datadir='/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/OUTPUT_FILES', factor=10)
+# dbase.AddEvent(x=500., z=2000.)
+dbase.AddEvent(x=500., z=1000.)
 inftan=symdata.InputFtanParam()
-inftan.ffact=5.
+inftan.ffact=1.
 inftan.pmf=True
-# inftan.vmin=2.5
-# inftan.vmax=4.0
+inftan.vmin=2.1
+# inftan.vmax=3.2
 try:
     del dbase.auxiliary_data.DISPbasic1
     del dbase.auxiliary_data.DISPbasic2
@@ -20,6 +22,7 @@ try:
     del dbase.auxiliary_data.DISPpmf2
 except:
     pass
+
 # 
 # dbase.aftanMP(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/LFMembrane_SH_D_780/DATA/DISP', inftan=inftan, basic2=True,
 #             pmf1=True, pmf2=True, tb=-11.9563813705)
@@ -36,9 +39,9 @@ dbase.InterpDisp(data_type='DISPpmf2')
 # ndbase=dbase.SelectData(outfname='sw4synthetics001.h5', stafile='station_001.lst')
 
 # del dbase.auxiliary_data.FieldDISPpmf2interp
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='amp', data_type='DISPpmf2')
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='Vgr',  data_type='DISPpmf2')
-dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/2d_3d_staircase_basin/field_data', fieldtype='Vph',  data_type='DISPpmf2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/field_data', fieldtype='amp', data_type='DISPpmf2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/field_data', fieldtype='Vgr',  data_type='DISPpmf2')
+dbase.GetField(outdir='/lustre/janus_scratch/life9360/specfem2d_working_dir/homo_lens_vert_10000km_2000km_R_400km_d_100km/field_data', fieldtype='Vph',  data_type='DISPpmf2')
 
 
 

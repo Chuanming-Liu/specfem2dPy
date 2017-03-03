@@ -160,15 +160,50 @@ class Field2d(object):
     def PlotField(self, contourflag=True):
         """Plot data with contour
         """
-        fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k')
+        # fig=plt.figure(num=None, figsize=(12, 12), dpi=80, facecolor='w', edgecolor='k')
+        fig, ax = plt.subplots()
         # xi, yi = np.meshgrid(self.x, self.y)
         # zi = griddata(self.XarrIn, self.YarrIn, self.ZarrIn, xi, yi )
         plt.pcolormesh(self.Xarr, self.Yarr, self.Zarr, cmap='gist_ncar_r', shading='gouraud')
         levels=np.linspace(self.Zarr.min(), self.Zarr.max(), 100)
-        plt.contour(self.Xarr, self.Yarr, self.Zarr, colors='k', levels=levels)
+        if contourflag:
+            plt.contour(self.Xarr, self.Yarr, self.Zarr, colors='k', levels=levels)
         plt.axis([0, self.x[-1], 0, self.y[-1]])
+        ############################
+        # try:
+        #     xarr=self.XLst[0]; yarr=self.YLst[0]
+        #     plt.plot(xarr, yarr, 'yo', lw=3, ms=5)
+        # except: pass
+        ############################
+        #################################################
+        from matplotlib.patches import Circle, Wedge, Polygon, Arc
+        from matplotlib.collections import PatchCollection
+        # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap='seismic_r', shading='gouraud', vmin=vmin, vmax= vmax)
+        ax.add_collection(PatchCollection([Circle(xy=(1200, 1200), radius=100)], facecolor='w', edgecolor='k', alpha=0.5))
+        # dlst = [700., 1000., 1200., 1450., 1800.]
+        # dlst = [200, 400., 700., 1150., 1500.]
+        # dlst = [150., 300., 500., 800.]
+        dlst = [1100., 1200., 1300., 1400., 1500.]
+        colorlst = ['b', 'k', 'r', 'g', 'm', 'y', 'c']
+        # colorlst = ['k']
+        for i in xrange(len(dlst)):
+            d=dlst[i]*2
+            color = colorlst[i]
+            ax.add_collection(PatchCollection([Arc(xy=(500, 500), width=d, height=d, angle=45, theta1=-30, theta2=30)],
+                facecolor='none', edgecolor=color, alpha=1))
+        # ax.add_collection(PatchCollection([Circle(xy=(2400, 1300), radius=100)], facecolor='b', edgecolor='b', alpha=0.1))
+        # ax.plot(500, 500 , 'y*', markersize=10)
+        # ax.plot(np.array([100., 3100.]), np.array([1000., 1000.]) , 'g-', lw=3)
+        # ax.plot(np.array([3100., 3100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 100.]), np.array([1000., 1600.]) , 'g-', lw=3)
+        # ax.plot(np.array([100., 3100.]), np.array([1600., 1600.]) , 'g-', lw=3)
+        #################################################
+        
         plt.xlabel('km')
         plt.ylabel('km')
+        plt.yticks(fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.axis('scaled')
         plt.show()
         return
     
@@ -279,7 +314,7 @@ class Field2d(object):
     
     # def GetPolar(self, mindist, ndist, ddist, dper=5, refangle=45, plotflag=True, minpolar=-50, maxpolar=50):
     #     distLst = mindist + np.arange(ndist)*ddist
-    def GetPolar(self, distLst, dper=5, refangle=45, plotflag=True, minpolar=-50, maxpolar=50):
+    def get_polar_value_deflection(self, distLst, dper=5, refangle=45, plotflag=True, minpolar=-50, maxpolar=50):
         # distLst = mindist + np.arange(ndist)*ddist
         DArr = np.sqrt((self.Xarr-self.enx)**2 + (self.Yarr-self.eny)**2)
         self.polarLst = []
@@ -304,6 +339,66 @@ class Field2d(object):
             self.polarLst.append(polarAngle)
             self.delLst.append(delAngle)
         if plotflag:
+            fig, ax = plt.subplots(len(distLst))
+            for i in xrange(len(distLst)):
+                ax[i].plot(self.polarLst[i], self.delLst[i], '-.o',
+                                 markersize=6, lw=2, label= '%f km' %distLst[i])
+                plt.xlabel('Polar angle(deg)', fontsize=20)
+                plt.ylabel('Deflection(deg)', fontsize=20)
+                ax[i].set_title('%g km' %distLst[i])
+            # plt.suptitle('D = 693 km', fontsize=30)
+            # plt.legend()
+            plt.show()
+            colorlst = ['b', 'k', 'r', 'g', 'm', 'y', 'c']
+            fig, ax = plt.subplots()
+            for i in xrange(len(distLst)):
+                c = colorlst[i]
+                plt.plot(self.polarLst[i], self.delLst[i], c+'-o',
+                                 markersize=5, lw=1.5, fillstyle='none', label= '%g km' %distLst[i])
+
+                
+            plt.xlabel('Polar angle (deg)', fontsize=20)
+            plt.ylabel('Deflection (deg)', fontsize=20)
+            plt.suptitle('D = 99 km', fontsize=30)
+            plt.legend()
+            plt.xlim([minpolar, maxpolar])
+            plt.show()
+            
+    def get_polar_value(self, distLst, dper=5, refangle=45, plotflag=True, minpolar=-50, maxpolar=50):
+        # distLst = mindist + np.arange(ndist)*ddist
+        DArr = np.sqrt((self.Xarr-self.enx)**2 + (self.Yarr-self.eny)**2)
+        self.polarLst = []
+        self.ZLst = []; self.XLst = []; self.YLst = []
+        for dist in distLst:
+            index = (DArr >= (dist - dper)) * (DArr <= (dist + dper))
+            Xarr = self.Xarr[index]
+            Yarr = self.Yarr[index]
+            straightX = (Xarr-self.enx) / np.sqrt ( (Xarr - self.enx)**2 + (Yarr - self.eny)**2 )
+            straightY = (Yarr-self.eny) / np.sqrt ( (Xarr - self.enx)**2 + (Yarr - self.eny)**2 )
+            radian= np.arctan2(straightY, straightX)
+            polarAngle = radian*180./np.pi
+            polarAngle[radian<0.] = polarAngle[radian<0.] + 360.
+            polarAngle = polarAngle - refangle
+            polarAngle[polarAngle > 90.] = polarAngle[polarAngle > 90.] -360.
+            Zvalue = self.Zarr[index]
+            Zvalue = Zvalue[(polarAngle>minpolar)*(polarAngle<maxpolar)]
+            polarAngle_out = polarAngle[(polarAngle>minpolar)*(polarAngle<maxpolar)]
+            indexsort = np.argsort(polarAngle_out)
+            polarAngle_out = polarAngle_out[indexsort]
+            Zvalue = Zvalue[indexsort]
+            ####
+            Xvalue = self.Xarr[index]
+            Xvalue = Xvalue[(polarAngle>minpolar)*(polarAngle<maxpolar)]
+            Xvalue = Xvalue[indexsort]
+            Yvalue = self.Yarr[index]
+            Yvalue = Yvalue[(polarAngle>minpolar)*(polarAngle<maxpolar)]
+            Yvalue = Yvalue[indexsort]     
+            ####
+            self.polarLst.append(polarAngle_out)
+            self.ZLst.append(Zvalue)
+            self.YLst.append(Yvalue)
+            self.XLst.append(Xvalue)
+        if plotflag:
             # fig, ax = plt.subplots(len(distLst))
             # for i in xrange(len(distLst)):
             #     ax[i].plot(self.polarLst[i], self.delLst[i], '-.o',
@@ -318,11 +413,21 @@ class Field2d(object):
             fig, ax = plt.subplots()
             for i in xrange(len(distLst)):
                 c = colorlst[i]
-                plt.plot(self.polarLst[i], self.delLst[i], c+'-o',
-                                 markersize=5, lw=1.5, fillstyle='none', label= '%g km' %distLst[i])
-            plt.xlabel('Polar angle (deg)', fontsize=20)
-            plt.ylabel('Deflection (deg)', fontsize=20)
-            plt.suptitle('D = 99 km', fontsize=30)
+                plt.plot(self.polarLst[i], self.ZLst[i], c+'-o',
+                                 markersize=5, lw=3, label= '%g km' %distLst[i])
+                yvalue=self.ZLst[i]
+                #yfill=yvalue[yvalue>1]
+                #xfill=self.polarLst[i][yvalue>1]
+                #ax.fill_between(xfill, 1, yfill, color='blue', linestyle='--', lw=0.)
+                #ax.fill_between(self.polarLst[i], 1, yvalue, where=yvalue>0.9, color='blue', linestyle='--', lw=0.)
+               # tfill=time[yvalue<0]
+               # yfill=(yvalue+backazi)[yvalue<0]
+               # ax.fill_between(tfill, backazi, yfill, color='red', linestyle='--', lw=0.)
+            plt.xlabel('Polar angle (deg)', fontsize=35)
+            plt.ylabel('Amplitude', fontsize=35)
+            plt.yticks(fontsize=30)
+            plt.xticks(fontsize=30)
+            # plt.suptitle('D = 990 km', fontsize=30)
             plt.legend()
             plt.xlim([minpolar, maxpolar])
             plt.show()
@@ -1041,8 +1146,11 @@ class WaveSnapshot_mp(object):
         ZLength=self.zmax-self.zmin
         xsize=zsize*(XLength/ZLength)
         # print xscale, zscale
-        fig = plt.figure(figsize=(xsize, zsize))
-        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap='seismic_r',
+        # fig, ax = plt.subplots(figsize=(xsize, zsize))
+        fig, ax = plt.subplots()
+        from lasif import colors
+        cmap = colors.get_colormap('tomo_80_perc_linear_lightness')
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.singleSnap, shading='gouraud', cmap=cmap,
                         vmin = -self.wfmax/factor, vmax = self.wfmax/factor)
         plt.xlabel('x('+unit+')', fontsize=30)
         plt.ylabel('z('+unit+')', fontsize=30)
@@ -1051,6 +1159,20 @@ class WaveSnapshot_mp(object):
         # plt.axis('scaled')
         plt.yticks(fontsize=20)
         plt.xticks(fontsize=20)
+        #####################################
+        plt.plot( 600., 1000 , 'r*', markersize=30, lw=3)
+        from matplotlib.patches import Circle, Wedge, Polygon
+        from matplotlib.collections import PatchCollection
+        ax.add_collection(PatchCollection([Circle(xy=(1600, 1000), radius=100)], facecolor='r', edgecolor='r', alpha=0.1))
+        # # plt.plot( [0., 4000.], [1000, 1000] , 'b--', lw=3)
+        plt.plot( [500., 500.], [700., 1300.] , 'g-', lw=3)
+        plt.plot( [500., 3500.], [700., 700.] , 'g-', lw=3)
+        plt.plot( [500., 3500.], [1300., 1300.] , 'g-', lw=3)
+        plt.plot( [3500., 3500.], [700., 1300.] , 'g-', lw=3)
+        plt.axis('scaled')
+        plt.xlim([500, 3500])
+        plt.ylim([700, 1300])
+        #########################################
         plt.show()
         return im
     
@@ -1194,22 +1316,29 @@ class kernel_field(object):
         fig, ax = plt.subplots()
         from lasif import colors
         cmap=colors.get_colormap('tomo_80_perc_linear_lightness')
-        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.kernelvalue, shading='gouraud', cmap=cmap,
-                        vmin = vmin, vmax = vmax)
-        plt.xlabel('x('+unit+')', fontsize=30)
-        plt.ylabel('z('+unit+')', fontsize=30)
+        # im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.kernelvalue*1e8, shading='gouraud', cmap=cmap,
+        #                 vmin = vmin*1e8, vmax = vmax*1e8)
+        im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.kernelvalue*1e9, shading='gouraud', cmap=cmap,
+                        vmin = vmin*1e9, vmax = vmax*1e9)
+        # im=plt.pcolormesh(self.XArr/ds, self.ZArr/ds, self.kernelvalue, shading='gouraud', cmap=cmap,
+        #         vmin = vmin, vmax = vmax)
+        plt.xlabel('x('+unit+')', fontsize=35)
+        plt.ylabel('z('+unit+')', fontsize=35)
         # plt.colorbar()
         # plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
         plt.axis('scaled')
         cb=plt.colorbar()#, size="3%", pad='2%')
-        cb.set_label(r"${\mathrm{s}}$ "+r"${\mathrm{m}^\mathrm{-2}}$", fontsize=20, rotation=90)
+        # cb.set_label(r"${\mathrm{10}^\mathrm{-8}}{\mathrm{s}}\cdot{\mathrm{m}^\mathrm{-2}}$", fontsize=30, rotation=90)
+        cb.set_label(r"${\mathrm{10}^\mathrm{-9}}{\mathrm{m}^\mathrm{-2}}$", fontsize=30, rotation=90)
+        # cb.set_label(r"${\mathrm{s}}$ "+r"${\mathrm{m}^\mathrm{-2}}$", fontsize=30, rotation=90)
+        cb.ax.tick_params(labelsize=30)
         from matplotlib.patches import Circle, Wedge, Polygon, Arc
         from matplotlib.collections import PatchCollection
         # fig, ax = plt.subplots()
         # plt.pcolormesh(self.Xarr, self.Yarr, self.delAngle, cmap='seismic_r', shading='gouraud', vmin=vmin, vmax= vmax)
-        ax.add_collection(PatchCollection([Circle(xy=(1000, 1000), radius=100)], facecolor='w', edgecolor='k', alpha=0.1))
-        plt.yticks(fontsize=20)
-        plt.xticks(fontsize=20)
+        # ax.add_collection(PatchCollection([Circle(xy=(1000, 1000), radius=100)], facecolor='w', edgecolor='k', alpha=0.1))
+        plt.yticks(fontsize=30)
+        plt.xticks(fontsize=30)
         # plt.ylim([0, 3200])
         plt.xlim([0, 3200])
         plt.show()

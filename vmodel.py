@@ -247,15 +247,135 @@ class vmodel(object):
             else: self.VsArrPlot[Index]=va
         return
     
+    def LensHomoModel(self, z0, x0, d1, d2, r1, r2, zmin=None, zmax=None, va=None, dv=None):
+        if va==None and dv ==None:
+            raise ValueError('va or dv need to be specified')
+        x1      = x0-d1+r1
+        x2      = x0+d2-r2
+        L1      = np.sqrt(r1**2-(r1-d1)**2)
+        L2      = np.sqrt(r2**2-(r2-d2)**2)
+        zmax12  = z0+min(L1,L2)
+        zmin12  = z0-min(L1,L2)
+        if zmin!=None: zmin = max(zmin12, zmin)
+        else: zmin  = zmin12
+        if zmax!=None: zmax = min(zmax12, zmax)
+        else: zmax  = zmax12
+        zmin    = max(self.zmin, zmin)
+        zmax    = min(self.zmax, zmax)
+        print 'zmax =',zmax, 'zmin =', zmin
+        ##################################################################
+        Zindex  = (self.ZArr>=zmin)*(self.ZArr<=zmax)
+        D1Arr   = np.sqrt( (self.XArr-x1)**2 + (self.ZArr-z0)**2)
+        D2Arr   = np.sqrt( (self.XArr-x2)**2 + (self.ZArr-z0)**2)
+        R1index = D1Arr<r1; R2index = D2Arr<r2
+        Index   = R1index*R2index*Zindex
+        if dv!=None: self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else: self.VsArr[Index]=va
+        if self.plotflag==True:
+            d1Arr = np.sqrt( (self.XArrPlot-x1)**2 + (self.ZArrPlot-z0)**2)
+            d2Arr = np.sqrt( (self.XArrPlot-x2)**2 + (self.ZArrPlot-z0)**2)
+            Index = (d1Arr < r1)*(d2Arr < r2)*(self.ZArrPlot>=zmin)*(self.ZArrPlot<=zmax)
+            if dv!=None:
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else:
+                self.VsArrPlot[Index]=va
+        return
+        
+    def LensHomoModel_v2(self, z0, x0, d1, d2, r1, r2, zmin=None, zmax=None, va=None, dv=None):
+        if va==None and dv ==None:
+            raise ValueError('va or dv need to be specified')
+        z1      = z0-d1+r1
+        z2      = z0+d2-r2
+        L1      = np.sqrt(r1**2-(r1-d1)**2)
+        L2      = np.sqrt(r2**2-(r2-d2)**2)
+        zmax12  = z0+min(L1,L2)
+        zmin12  = z0-min(L1,L2)
+        if zmin!=None: zmin = max(zmin12, zmin)
+        else: zmin  = zmin12
+        if zmax!=None: zmax = min(zmax12, zmax)
+        else: zmax  = zmax12
+        zmin    = max(self.zmin, zmin)
+        zmax    = min(self.zmax, zmax)
+        print 'zmax =',zmax, 'zmin =', zmin
+        ##################################################################
+        Zindex  = (self.ZArr>=zmin)*(self.ZArr<=zmax)
+        D1Arr   = np.sqrt( (self.XArr-x0)**2 + (self.ZArr-z1)**2)
+        D2Arr   = np.sqrt( (self.XArr-x0)**2 + (self.ZArr-z2)**2)
+        R1index = D1Arr<r1; R2index = D2Arr<r2
+        Index   = R1index*R2index*Zindex
+        if dv!=None: self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else: self.VsArr[Index]=va
+        if self.plotflag==True:
+            d1Arr = np.sqrt( (self.XArrPlot-x0)**2 + (self.ZArrPlot-z1)**2)
+            d2Arr = np.sqrt( (self.XArrPlot-x0)**2 + (self.ZArrPlot-z2)**2)
+            Index = (d1Arr < r1)*(d2Arr < r2)*(self.ZArrPlot>=zmin)*(self.ZArrPlot<=zmax)
+            if dv!=None:
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else:
+                self.VsArrPlot[Index]=va
+        return
+    
+    def HomoEllipse(self, Xc, Zc, a, b, va=None, dv=None):
+        if va==None and dv ==None:
+            raise ValueError('va or dv need to be specified')
+        print 'Adding homo ellipse anomaly Xc =', Xc,' Zc =', Zc, ' a =',a, 'b =',b
+        unitArr = np.sqrt( (self.XArr-Xc)**2/a**2 + (self.ZArr-Zc)**2/b**2)
+        Index = unitArr <= 1
+        if dv!=None:
+            self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else:
+            self.VsArr[Index]=va
+        if self.plotflag==True:
+            dArr = np.sqrt( (self.XArrPlot-Xc)**2 + (self.ZArrPlot-Zc)**2)
+            Index = dArr <= R
+            if dv!=None:
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else:
+                self.VsArrPlot[Index]=va
+        
+        
+        z1      = z0-d1+r1
+        z2      = z0+d2-r2
+        L1      = np.sqrt(r1**2-(r1-d1)**2)
+        L2      = np.sqrt(r2**2-(r2-d2)**2)
+        zmax12  = z0+min(L1,L2)
+        zmin12  = z0-min(L1,L2)
+        if zmin!=None: zmin = max(zmin12, zmin)
+        else: zmin  = zmin12
+        if zmax!=None: zmax = min(zmax12, zmax)
+        else: zmax  = zmax12
+        zmin    = max(self.zmin, zmin)
+        zmax    = min(self.zmax, zmax)
+        print 'zmax =',zmax, 'zmin =', zmin
+        ##################################################################
+        Zindex  = (self.ZArr>=zmin)*(self.ZArr<=zmax)
+        D1Arr   = np.sqrt( (self.XArr-x0)**2 + (self.ZArr-z1)**2)
+        D2Arr   = np.sqrt( (self.XArr-x0)**2 + (self.ZArr-z2)**2)
+        R1index = D1Arr<r1; R2index = D2Arr<r2
+        Index   = R1index*R2index*Zindex
+        if dv!=None: self.VsArr[Index]=self.VsArr[Index]*(1+dv)
+        else: self.VsArr[Index]=va
+        if self.plotflag==True:
+            d1Arr = np.sqrt( (self.XArrPlot-x0)**2 + (self.ZArrPlot-z1)**2)
+            d2Arr = np.sqrt( (self.XArrPlot-x0)**2 + (self.ZArrPlot-z2)**2)
+            Index = (d1Arr < r1)*(d2Arr < r2)*(self.ZArrPlot>=zmin)*(self.ZArrPlot<=zmax)
+            if dv!=None:
+                self.VsArrPlot[Index] = self.VsArrPlot[Index]*(1+dv)
+            else:
+                self.VsArrPlot[Index]=va
+        return
+        
+        
+    
     def readPhv(self, x0, z0, infname, evlo=None, evla=None, lon0=None, lat0=None, dx=0.5):
-        inArr=np.loadtxt(infname)
-        lons=inArr[:,0]; lats=inArr[:,1]; phvArr=inArr[:,2]*1000.
-        lon0=lons.min(); lat0=lats.min(); lon1=lons.max(); lat1=lats.max()
-        del_lons=lons-lon0; del_lats=lats-lat0; maxdlon=del_lons.max(); maxdlat=del_lats.max()
+        inArr   = np.loadtxt(infname)
+        lons    = inArr[:,0]; lats=inArr[:,1]; phvArr=inArr[:,2]*1000.
+        lon0    = lons.min(); lat0=lats.min(); lon1=lons.max(); lat1=lats.max()
+        del_lons= lons-lon0; del_lats=lats-lat0; maxdlon=del_lons.max(); maxdlat=del_lats.max()
         # maxdistNS=obspy.geodetics.gps2dist_azimuth(lat0, lon0, lat0+maxdlat, lon0) # distance is in m
         # maxdistEW=obspy.geodetics.gps2dist_azimuth(lat0, lon0, lat0, lon0+maxdlon) # distance is in m
         # maxdist_y=maxdistNS/1000.; maxdist_x=maxdistEW/1000.
-        m = Basemap(projection='cea',llcrnrlat=lat0,urcrnrlat=lat1, llcrnrlon=lon0,urcrnrlon=lon1,resolution='c')
+        m       = Basemap(projection='cea',llcrnrlat=lat0,urcrnrlat=lat1, llcrnrlon=lon0,urcrnrlon=lon1,resolution='c')
         xins, zins = m(lons, lats)
         try:
             evx, evz=m(evlo, evla)
@@ -264,14 +384,14 @@ class vmodel(object):
             pass
         # if xins.max()>self.xmax-x0 or zins.max()>self.zmax-z0:
         #     raise ValueError('Input phase velocity map is too large!')
-        Numb=int(lons.size)
+        Numb    = int(lons.size)
         radius, az, baz=obspy.geodetics.gps2dist_azimuth(0, 0, dx, 0)
         for i in xrange(Numb):
             # print i
-            x=xins[i]; z=zins[i]; lon=lons[i]; lat=lats[i]; va=phvArr[i]
+            x   = xins[i]; z=zins[i]; lon=lons[i]; lat=lats[i]; va=phvArr[i]
             # xc=x0+x; zc=z0+z
             # self.CircleHomoAnomaly(Xc=xc, Zc=zc, R=radius, va=va)
-            xmin=x0+x-radius; xmax=x0+x+radius; zmin=z0+z-radius; zmax=z0+z+radius
+            xmin= x0+x-radius; xmax=x0+x+radius; zmin=z0+z-radius; zmax=z0+z+radius
             self.BlockHomoAnomaly(Xmin=xmin, Xmax=xmax, Zmin=zmin, Zmax=zmax, va=va)
         return
     
@@ -386,20 +506,32 @@ class vmodel(object):
             self.xi, self.zi = np.meshgrid(xi, zi)
             #-- Interpolating at the points in xi, yi
             self.vi = griddata(self.XArr, self.ZArr, self.VsArr, self.xi, self.zi, 'linear')
-            im=plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax)
+            im=plt.pcolormesh(self.xi/ds, self.zi/ds, ma.getdata(self.vi)/ds, cmap=cmap, vmin=vmin, vmax=vmax, shading='gouraud')
         ##########################################
-        plt.plot( 200., 1300 , 'y*', markersize=30)
-        # plt.plot( [200., 1300.], [3200, 1300] , 'b-.', lw=3)
+        plt.plot(500., 1000 , 'r*', markersize=30, lw=3)
+        # plt.plot( [0., 4000.], [1000, 1000] , 'b--', lw=3)
+        # plt.plot( [500., 500.], [700., 1300.] , 'g-', lw=3)
+        # plt.plot( [500., 3500.], [700., 700.] , 'g-', lw=3)
+        # plt.plot( [500., 3500.], [1300., 1300.] , 'g-', lw=3)
+        # plt.plot( [3500., 3500.], [700., 1300.] , 'g-', lw=3)
+        # 
+        # plt.plot( [0., 0.], [0., 2000.] , 'k-', lw=3)
+        # plt.plot( [0., 4000.], [0., 0.] , 'k-', lw=3)
+        # plt.plot( [4000., 4000.], [0., 2000.] , 'k-', lw=3)
+        # plt.plot( [0., 4000.], [2000., 2000.] , 'k-', lw=3)
         ##########################################
-        plt.xlabel('x('+unit+')', fontsize=30)
-        plt.ylabel('z('+unit+')', fontsize=30)
+        plt.xlabel('x('+unit+')', fontsize=35)
+        plt.ylabel('z('+unit+')', fontsize=35)
         # plt.axis([self.xmin/ds, self.xmax/ds, self.zmin/ds, self.zmax/ds])
         plt.axis('scaled')
-        cb=plt.colorbar(shrink=0.5)#, size="3%", pad='2%')
+        cb=plt.colorbar(shrink=0.8)#, size="3%", pad='2%')
         cb.set_label('Vs (km/s)', fontsize=20, rotation=90)
-        plt.yticks(fontsize=20)
-        plt.xticks(fontsize=20)
-        # plt.ylim([])
+        plt.yticks(fontsize=30)
+        plt.xticks(fontsize=30)
+        ########################
+        # plt.ylim([-100, 2100])
+        # plt.xlim([-100, 4100])
+        ########################
         plt.show()
         return
     
@@ -472,7 +604,7 @@ class InputChecker(object):
         # Need checking! (in manual: threshold value is around 4.5 points
         # per wavelength in elastic media and 5.5 in acoustic media), 4.5 grid points OR 4.5 element points
         if dsmax * 4.5 > lambdamin:
-            raise ValueError('Grid spacing is too large: ', str(dsmax),' for ',lambdamin, ' m')
+            raise ValueError('Grid spacing is too large: '+ str(dsmax)+' for '+str(lambdamin)+ ' m')
         else:
             print 'Grid spacing:', str(dsmax),'m for',lambdamin, 'm'
         return

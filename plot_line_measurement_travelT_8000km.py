@@ -38,13 +38,13 @@ ax.fill_betweenx(np.array([-0.1, TArr.max()]), y1, y2, facecolor='red', alpha=0.
 # y1=2200
 # y2=2400
 # ax.fill_betweenx(np.array([0.2, 1.1]), y1, y2, facecolor='blue', alpha=0.5)
-ax.tick_params(axis='x', labelsize=20)
-ax.tick_params(axis='y', labelsize=20)
+ax.tick_params(axis='x', labelsize=30)
+ax.tick_params(axis='y', labelsize=30)
 # plt.ylim([TArr.min(), TArr.max()])
 plt.ylim([-0.1, (TArr-TArr2-1.4).max()])
 plt.xlim([500., 7500.])
 plt.xticks(np.arange(500., 8000., 500.))
-plt.ylabel('Travel time difference (s)', fontsize=30);
-plt.xlabel('Distance (km)', fontsize=30);
+plt.ylabel('Travel time difference (s)', fontsize=40);
+plt.xlabel('Distance (km)', fontsize=40);
 # plt.title('Travel Time with rectangle anomaly', fontsize=30);
 plt.show()

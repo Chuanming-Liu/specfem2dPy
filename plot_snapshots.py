@@ -19,7 +19,7 @@ WS.ReadGridFile()
 WS.LoadElementIndex('/lustre/janus_scratch/life9360/specfem2d_working_dir/multipathing_2000km_4000km');
 # WS.SaveElementIndex('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D/')
 # WS.LoadElementIndex('/home/lili/code/specfem2d/EXAMPLES/LFMembrane_SH_D')
-WS.ReadSnapshots()
+# WS.ReadSnapshots()
 # im_ani=WS.PlotSnapshots()
 # WS.writeASDF('field2d_d_001.h5')
 # WS.ReadSingleSnap(1000)
